@@ -8,6 +8,7 @@ import { injectBaseElement, normalizeSourceUrl } from "./public/deckify.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicRoot = path.join(__dirname, "public");
+const sharedRoot = path.join(__dirname, "src", "shared");
 const fixtureRoot = path.join(__dirname, "test", "fixtures");
 
 const mimeTypes = new Map([
@@ -45,6 +46,11 @@ export function createPresentationServer() {
 
       if (url.pathname.startsWith("/test/fixtures/")) {
         await serveStatic(response, fixtureRoot, url.pathname.replace("/test/fixtures/", ""));
+        return;
+      }
+
+      if (url.pathname.startsWith("/src/shared/")) {
+        await serveStatic(response, sharedRoot, url.pathname.replace("/src/shared/", ""));
         return;
       }
 
