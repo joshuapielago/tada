@@ -7,6 +7,10 @@ const EXISTING_DECK_SELECTORS = [
   "[data-slide]",
   ".slide",
 ];
+const SLIDE_COMMENT_PATTERN = /<!--\s*slide\s*-->/i;
+const SLIDE_COMMENT_SPLIT_PATTERN = /<!--\s*slide\s*-->/gi;
+const HORIZONTAL_RULE_PATTERN = /<hr\b[^>]*\/?>/i;
+const HORIZONTAL_RULE_SPLIT_PATTERN = /<hr\b[^>]*\/?>/gi;
 
 export function normalizeSourceUrl(rawUrl) {
   const value = String(rawUrl ?? "").trim();
@@ -50,6 +54,14 @@ export function analyzeDeckHtml(html) {
     return { mode: "article" };
   }
 
+  if (hasSlideComments(source)) {
+    return { mode: "slide-comment" };
+  }
+
+  if (hasHorizontalRules(source)) {
+    return { mode: "horizontal-rule" };
+  }
+
   if (/<h[12](?:\s|>)/i.test(source)) {
     return { mode: "headings" };
   }
@@ -71,6 +83,14 @@ export function detectBoundaryMode(html, selector = DEFAULT_SELECTOR) {
 
   if (/<article(?:\s|>)/i.test(source)) {
     return "article";
+  }
+
+  if (hasSlideComments(source)) {
+    return "slide-comment";
+  }
+
+  if (hasHorizontalRules(source)) {
+    return "horizontal-rule";
   }
 
   if (/<h[12](?:\s|>)/i.test(source)) {
@@ -406,6 +426,18 @@ function extractSlidesWithDom(html, { selector, sourceUrl }) {
   }
 
   if (selected.length === 0) {
+    selected = splitDomBySlideComment(document).map((content) => ({ outerHTML: content }));
+    mode = selected.length > 0 ? "slide-comment" : mode;
+    runtimeSlideSelectors = selected.length > 0 ? null : runtimeSlideSelectors;
+  }
+
+  if (selected.length === 0) {
+    selected = splitDomByHorizontalRule(document).map((content) => ({ outerHTML: content }));
+    mode = selected.length > 0 ? "horizontal-rule" : mode;
+    runtimeSlideSelectors = selected.length > 0 ? null : runtimeSlideSelectors;
+  }
+
+  if (selected.length === 0) {
     selected = groupSlidesByHeading(document).map((content) => ({ outerHTML: content }));
     mode = selected.length > 0 ? "headings" : mode;
     runtimeSlideSelectors = null;
@@ -476,6 +508,18 @@ function extractSlidesWithStrings(html, { selector, sourceUrl }) {
     slideHtml = extractSimpleSelectorHtml(html, "article");
     mode = slideHtml.length > 0 ? "article" : mode;
     runtimeSlideSelectors = slideHtml.length > 0 ? ["article"] : runtimeSlideSelectors;
+  }
+
+  if (slideHtml.length === 0) {
+    slideHtml = extractSlideCommentGroupsFromHtml(html);
+    mode = slideHtml.length > 0 ? "slide-comment" : mode;
+    runtimeSlideSelectors = slideHtml.length > 0 ? null : runtimeSlideSelectors;
+  }
+
+  if (slideHtml.length === 0) {
+    slideHtml = extractHorizontalRuleGroupsFromHtml(html);
+    mode = slideHtml.length > 0 ? "horizontal-rule" : mode;
+    runtimeSlideSelectors = slideHtml.length > 0 ? null : runtimeSlideSelectors;
   }
 
   if (slideHtml.length === 0) {
@@ -915,6 +959,14 @@ function simpleSelectorMatchesSource(html, selector) {
   return false;
 }
 
+function hasSlideComments(html) {
+  return SLIDE_COMMENT_PATTERN.test(String(html ?? ""));
+}
+
+function hasHorizontalRules(html) {
+  return HORIZONTAL_RULE_PATTERN.test(String(html ?? ""));
+}
+
 function extractSimpleSelectorHtml(html, selector) {
   if (/^[a-z][\w-]*$/i.test(selector)) {
     const tag = escapeRegExp(selector);
@@ -924,6 +976,71 @@ function extractSimpleSelectorHtml(html, selector) {
   }
 
   return [];
+}
+
+function splitDomBySlideComment(document) {
+  return splitDomByBoundary(document, (node) => node.nodeType === 8 && /^\s*slide\s*$/i.test(node.nodeValue ?? ""));
+}
+
+function splitDomByHorizontalRule(document) {
+  return splitDomByBoundary(document, (node) => node.nodeType === 1 && node.tagName === "HR");
+}
+
+function splitDomByBoundary(document, isBoundary) {
+  const container = findBoundaryContainer(document.body, isBoundary);
+  if (!container) {
+    return [];
+  }
+
+  const slides = [];
+  let current = [];
+
+  for (const child of Array.from(container.childNodes)) {
+    if (isBoundary(child)) {
+      pushSerializedSlide(slides, current);
+      current = [];
+      continue;
+    }
+
+    current.push(child);
+  }
+
+  pushSerializedSlide(slides, current);
+  return slides.length > 1 ? slides : [];
+}
+
+function pushSerializedSlide(slides, nodes) {
+  const html = nodes.map(serializeNodeHtml).join("").trim();
+  if (html) {
+    slides.push(html);
+  }
+}
+
+function serializeNodeHtml(node) {
+  if (node.outerHTML) {
+    return node.outerHTML;
+  }
+
+  if (node.nodeType === 8) {
+    return "";
+  }
+
+  return node.textContent ?? "";
+}
+
+function findBoundaryContainer(root, isBoundary) {
+  if (!root) {
+    return null;
+  }
+
+  const candidates = [root, ...Array.from(root.querySelectorAll("main, article, section, div"))];
+  return candidates
+    .map((element) => ({
+      element,
+      count: Array.from(element.childNodes).filter(isBoundary).length,
+    }))
+    .filter((candidate) => candidate.count > 0)
+    .sort((a, b) => b.count - a.count)[0]?.element;
 }
 
 function groupSlidesByHeading(document) {
@@ -972,6 +1089,20 @@ function extractHeadingGroupsFromHtml(html) {
   const body = extractBodyHtml(html) || html;
   const pieces = body.split(/(?=<h[12](?:\s|>))/i).map((piece) => piece.trim()).filter(Boolean);
   return pieces.filter((piece) => /^<h[12](?:\s|>)/i.test(piece));
+}
+
+function extractSlideCommentGroupsFromHtml(html) {
+  return splitHtmlByBoundary(html, SLIDE_COMMENT_SPLIT_PATTERN);
+}
+
+function extractHorizontalRuleGroupsFromHtml(html) {
+  return splitHtmlByBoundary(html, HORIZONTAL_RULE_SPLIT_PATTERN);
+}
+
+function splitHtmlByBoundary(html, pattern) {
+  const body = extractBodyHtml(html) || html;
+  const pieces = body.split(pattern).map((piece) => piece.trim()).filter(Boolean);
+  return pieces.length > 1 ? pieces : [];
 }
 
 function extractNodeNotes(node) {

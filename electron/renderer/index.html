@@ -7,7 +7,7 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http: https:; frame-src 'self' about: data: blob: tada-slide:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
     >
-    <title>tada</title>
+    <title>TaDa!</title>
     <link rel="stylesheet" href="./styles.css">
     <script type="module" src="./app.js"></script>
   </head>
@@ -15,7 +15,7 @@
     <div class="app-shell">
       <header class="toolbar" aria-label="Presentation controls">
         <div class="title-lockup">
-          <strong>tada</strong>
+          <strong>TaDa!</strong>
           <span id="sourceLabel">No deck loaded</span>
         </div>
 
@@ -88,8 +88,23 @@
 
           <div class="stage fit-frame" id="stage">
             <div class="empty-state" id="emptyState">
-              <strong>No deck loaded</strong>
-              <button class="button primary" id="emptyOpenButton" type="button">Open HTML</button>
+              <div class="empty-state-mark" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <strong>Drop an HTML deck to start.</strong>
+              <p>Open a file, paste raw HTML anywhere, or load a URL from the top bar.</p>
+              <div class="empty-actions">
+                <button class="button primary" id="emptyOpenButton" type="button">Open HTML</button>
+                <button class="button" id="emptyFocusSourceButton" type="button">Paste URL</button>
+                <button class="button" id="copyPromptButton" type="button">Copy Claude Prompt</button>
+              </div>
+              <div class="empty-hints" aria-label="Accepted sources">
+                <span>.html</span>
+                <span>localhost</span>
+                <span>remote URL</span>
+              </div>
             </div>
 
             <button class="stage-nav stage-nav-previous" id="prevStageButton" type="button" aria-label="Previous slide" title="Previous slide" hidden>

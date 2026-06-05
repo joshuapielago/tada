@@ -5,6 +5,7 @@ import {
   normalizeSelector,
   normalizeSourceUrl,
 } from "../../src/shared/deckify.js";
+import { buildClaudeDeckPrompt, getPastedHtml } from "../../src/shared/ingest.js";
 
 const api = window.htmlPresenter;
 let activeStageDocumentUrl = "";
@@ -40,6 +41,8 @@ const elements = {
   exportShowButton: document.querySelector("#exportShowButton"),
   updateButton: document.querySelector("#updateButton"),
   emptyOpenButton: document.querySelector("#emptyOpenButton"),
+  emptyFocusSourceButton: document.querySelector("#emptyFocusSourceButton"),
+  copyPromptButton: document.querySelector("#copyPromptButton"),
   panelToggle: document.querySelector("#panelToggle"),
   fullscreenButton: document.querySelector("#fullscreenButton"),
   sidePanel: document.querySelector("#sidePanel"),
@@ -89,6 +92,14 @@ function bindEvents() {
     void openFile();
   });
 
+  elements.emptyFocusSourceButton.addEventListener("click", () => {
+    focusSourceInput();
+  });
+
+  elements.copyPromptButton.addEventListener("click", () => {
+    void copyClaudePrompt();
+  });
+
   elements.presentButton.addEventListener("click", () => {
     void enterPresentationMode();
   });
@@ -136,6 +147,7 @@ function bindEvents() {
   }
 
   window.addEventListener("keydown", handleKeydown);
+  window.addEventListener("paste", handlePaste);
   window.addEventListener("message", handleSlideMessage);
 
   for (const eventName of ["dragenter", "dragover"]) {
@@ -255,6 +267,20 @@ async function loadDroppedFile(file) {
   }
 }
 
+async function copyClaudePrompt() {
+  const prompt = buildClaudeDeckPrompt();
+  try {
+    if (api?.writeClipboardText) {
+      await api.writeClipboardText(prompt);
+    } else {
+      await navigator.clipboard.writeText(prompt);
+    }
+    showToast("Copied Claude deck prompt.");
+  } catch {
+    showToast("Could not copy the prompt.");
+  }
+}
+
 async function toggleFullscreen() {
   try {
     await api?.toggleFullscreen?.();
@@ -306,7 +332,7 @@ async function exportShow() {
   setBusy(true);
   try {
     const showHtml = buildTadaShowDocument({
-      title: state.sourceLabel || "tada show",
+      title: state.sourceLabel || "TaDa! show",
       mode: state.mode,
       slides: state.slides,
     });
@@ -654,6 +680,29 @@ function handleKeydown(event) {
   }
 }
 
+function handlePaste(event) {
+  if (isEditing(event.target)) {
+    return;
+  }
+
+  const html = getPastedHtml(event.clipboardData);
+  if (!html) {
+    return;
+  }
+
+  event.preventDefault();
+  try {
+    loadPayload({
+      html,
+      sourceLabel: "Pasted HTML",
+      sourceUrl: "",
+    });
+    showToast("Loaded pasted HTML.");
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
 function handleSlideMessage(event) {
   if (event.source !== elements.slideFrame.contentWindow) {
     return;
@@ -759,6 +808,8 @@ function setBusy(isBusy) {
   elements.presentButton.disabled = isBusy || !hasSlides;
   elements.exportShowButton.disabled = isBusy || !hasSlides;
   elements.emptyOpenButton.disabled = isBusy;
+  elements.emptyFocusSourceButton.disabled = isBusy;
+  elements.copyPromptButton.disabled = isBusy;
   elements.updateButton.disabled =
     isBusy || (!state.updateStatus.canCheck && !state.updateStatus.canInstall);
 }
@@ -776,6 +827,11 @@ function focusStage() {
   requestAnimationFrame(() => {
     elements.presentationArea.focus({ preventScroll: true });
   });
+}
+
+function focusSourceInput() {
+  elements.sourceInput.focus();
+  elements.sourceInput.select();
 }
 
 function applyUpdateStatus(status) {

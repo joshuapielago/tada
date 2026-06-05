@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, shell } = require("electron");
+const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, protocol, shell } = require("electron");
 const { readFile, writeFile } = require("node:fs/promises");
 const { randomUUID } = require("node:crypto");
 const path = require("node:path");
@@ -115,6 +115,11 @@ function installIpcHandlers() {
 
   ipcMain.handle("file:read-dropped", async (_event, filePath) => {
     return readHtmlFile(filePath);
+  });
+
+  ipcMain.handle("clipboard:write-text", (_event, text) => {
+    clipboard.writeText(String(text ?? ""));
+    return true;
   });
 
   ipcMain.handle("app:toggle-fullscreen", (event) => {

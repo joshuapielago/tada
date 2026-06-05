@@ -5,6 +5,7 @@ import { describe, it } from "node:test";
 const rendererHtml = await readFile("electron/renderer/index.html", "utf8");
 const rendererApp = await readFile("electron/renderer/app.js", "utf8");
 const mainProcess = await readFile("electron/main.cjs", "utf8");
+const preload = await readFile("electron/preload.cjs", "utf8");
 
 describe("Electron production security hardening", () => {
   it("sets a renderer content security policy", () => {
@@ -36,5 +37,22 @@ describe("Electron production security hardening", () => {
     assert.match(mainProcess, /setWindowOpenHandler/);
     assert.match(mainProcess, /setPermissionRequestHandler/);
     assert.match(mainProcess, /will-attach-webview/);
+  });
+
+  it("keeps clipboard access explicit and user initiated", () => {
+    assert.match(preload, /writeClipboardText\(text\)/);
+    assert.match(preload, /clipboard:write-text/);
+    assert.match(mainProcess, /clipboard:write-text/);
+    assert.match(mainProcess, /clipboard\.writeText/);
+    assert.doesNotMatch(rendererApp, /readText|clipboard:read/i);
+  });
+
+  it("wires paste-to-present and prompt-copy actions through shared ingest helpers", () => {
+    assert.match(rendererApp, /from "\.\.\/\.\.\/src\/shared\/ingest\.js"/);
+    assert.match(rendererApp, /getPastedHtml/);
+    assert.match(rendererApp, /buildClaudeDeckPrompt/);
+    assert.match(rendererApp, /addEventListener\("paste"/);
+    assert.match(rendererApp, /sourceLabel:\s*"Pasted HTML"/);
+    assert.match(rendererHtml, /id="copyPromptButton"/);
   });
 });
