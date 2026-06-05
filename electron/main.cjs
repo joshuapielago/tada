@@ -3,6 +3,7 @@ const { readFile, writeFile } = require("node:fs/promises");
 const { randomUUID } = require("node:crypto");
 const path = require("node:path");
 const { fileURLToPath, pathToFileURL } = require("node:url");
+const { collectCommandLineOpenRequests } = require("./command-line.cjs");
 const { inlineLocalScriptTags } = require("../src/shared/local-scripts.cjs");
 const { createUpdateService } = require("./updater.cjs");
 const packageConfig = require("../package.json");
@@ -404,17 +405,12 @@ function queueCommandLineOpenPaths() {
   }
 
   commandLineOpenPathsQueued = true;
-  const appPathIndex = process.argv.findIndex((argument) => path.resolve(argument) === app.getAppPath());
-  const firstFileIndex = appPathIndex >= 0 ? appPathIndex + 1 : isMac && app.isPackaged ? 1 : 2;
-  const filePaths = process.argv
-    .slice(firstFileIndex)
-    .filter((argument) => argument && !argument.startsWith("-"))
-    .map((argument) => ({
-      filePath: path.resolve(argument),
-      presentOnOpen: process.argv.includes("--present"),
-    }));
-
-  queuedOpenPaths.push(...filePaths);
+  queuedOpenPaths.push(
+    ...collectCommandLineOpenRequests(process.argv, {
+      appPath: app.getAppPath(),
+      isPackaged: app.isPackaged,
+    }),
+  );
 }
 
 async function chooseFileFromMenu() {
