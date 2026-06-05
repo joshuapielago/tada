@@ -1,4 +1,5 @@
 import { createReadStream } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -25,6 +26,8 @@ const mimeTypes = new Map([
 ]);
 
 export function createPresentationServer() {
+  const localAssetRoots = new Map();
+
   return createServer(async (request, response) => {
     if (!request.url || request.method !== "GET") {
       sendText(response, 405, "Method not allowed");
@@ -35,12 +38,12 @@ export function createPresentationServer() {
 
     try {
       if (url.pathname === "/api/fetch") {
-        await handleFetchRequest(request, url, response);
+        await handleFetchRequest(request, url, response, localAssetRoots);
         return;
       }
 
       if (url.pathname.startsWith("/api/local-assets/")) {
-        await handleLocalAssetRequest(url, response);
+        await handleLocalAssetRequest(url, response, localAssetRoots);
         return;
       }
 
@@ -72,7 +75,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   });
 }
 
-async function handleFetchRequest(request, url, response) {
+async function handleFetchRequest(request, url, response, localAssetRoots) {
   let targetUrl;
   try {
     targetUrl = normalizeSourceUrl(url.searchParams.get("url"));
@@ -84,7 +87,7 @@ async function handleFetchRequest(request, url, response) {
   const source = new URL(targetUrl);
 
   if (source.protocol === "file:") {
-    await handleLocalFileSource(request, source, response);
+    await handleLocalFileSource(request, source, response, localAssetRoots);
     return;
   }
 
@@ -128,9 +131,13 @@ async function handleFetchRequest(request, url, response) {
   }
 }
 
-async function handleLocalFileSource(request, source, response) {
+async function handleLocalFileSource(request, source, response, localAssetRoots) {
   try {
-    sendJson(response, 200, await createLocalFilePayload(source, request.headers.host ?? "127.0.0.1:4173"));
+    sendJson(
+      response,
+      200,
+      await createLocalFilePayload(source, request.headers.host ?? "127.0.0.1:4173", localAssetRoots),
+    );
   } catch (error) {
     if (error instanceof LocalSourceError) {
       sendJson(response, error.statusCode, { error: error.message });
@@ -141,7 +148,7 @@ async function handleLocalFileSource(request, source, response) {
   }
 }
 
-export async function createLocalFilePayload(source, host) {
+export async function createLocalFilePayload(source, host, localAssetRoots = new Map()) {
   const filePath = fileURLToPath(source);
 
   let fileStat;
@@ -161,7 +168,7 @@ export async function createLocalFilePayload(source, host) {
     throw new LocalSourceError(415, "That local file is not HTML.");
   }
 
-  const assetBase = localAssetBaseUrl(host, path.dirname(filePath));
+  const assetBase = localAssetBaseUrl(host, path.dirname(filePath), localAssetRoots);
 
   return {
     html: injectBaseElement(text, assetBase),
@@ -170,18 +177,18 @@ export async function createLocalFilePayload(source, host) {
   };
 }
 
-async function handleLocalAssetRequest(url, response) {
-  const [, encodedRoot, requestedPath = ""] =
+async function handleLocalAssetRequest(url, response, localAssetRoots) {
+  const [, rootToken, requestedPath = ""] =
     url.pathname.match(/^\/api\/local-assets\/([^/]+)\/?(.*)$/) ?? [];
 
-  if (!encodedRoot) {
+  if (!rootToken) {
     sendText(response, 404, "Not found");
     return;
   }
 
   let resolvedPath;
   try {
-    resolvedPath = resolveLocalAssetPath(encodedRoot, requestedPath || ".");
+    resolvedPath = resolveLocalAssetPath(localAssetRoots, rootToken, requestedPath || ".");
   } catch {
     sendJson(response, 404, { error: "That local file was not found." });
     return;
@@ -190,8 +197,12 @@ async function handleLocalAssetRequest(url, response) {
   await serveStatic(response, path.dirname(resolvedPath), path.basename(resolvedPath));
 }
 
-export function resolveLocalAssetPath(encodedRoot, requestedPath) {
-  const root = Buffer.from(encodedRoot, "base64url").toString("utf8");
+export function resolveLocalAssetPath(localAssetRoots, rootToken, requestedPath) {
+  const root = localAssetRoots.get(rootToken);
+  if (!root) {
+    throw new Error("Unknown local asset root.");
+  }
+
   const resolvedPath = path.resolve(root, decodeURIComponent(requestedPath));
 
   if (resolvedPath !== root && !resolvedPath.startsWith(`${root}${path.sep}`)) {
@@ -252,9 +263,10 @@ function sendText(response, statusCode, text) {
   response.end(text);
 }
 
-function localAssetBaseUrl(host, fileDirectory) {
-  const encodedDirectory = Buffer.from(fileDirectory).toString("base64url");
-  return `http://${host}/api/local-assets/${encodedDirectory}/`;
+function localAssetBaseUrl(host, fileDirectory, localAssetRoots) {
+  const rootToken = randomUUID();
+  localAssetRoots.set(rootToken, fileDirectory);
+  return `http://${host}/api/local-assets/${rootToken}/`;
 }
 
 function sourceLabelFromUrl(value) {

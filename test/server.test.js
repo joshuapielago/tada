@@ -20,42 +20,59 @@ async function fetchFromTestServer(pathname) {
 describe("local file source loading", () => {
   it("creates an HTML payload for a local file URL", async () => {
     const fixturePath = path.resolve("test/fixtures/sample-deck.html");
+    const localAssetRoots = new Map();
     const payload = await createLocalFilePayload(
       new URL(pathToFileURL(fixturePath).href),
       "127.0.0.1:4173",
+      localAssetRoots,
     );
 
     assert.equal(payload.sourceLabel, "sample-deck.html");
     assert.equal(payload.sourceUrl, pathToFileURL(fixturePath).href);
     assert.match(payload.html, /Client Review/);
-    assert.match(payload.html, /<base href="http:\/\/127\.0\.0\.1:4173\/api\/local-assets\/[^"]+\/">/);
+    assert.match(
+      payload.html,
+      /<base href="http:\/\/127\.0\.0\.1:4173\/api\/local-assets\/[0-9a-f-]{36}\/">/,
+    );
+    assert.equal(localAssetRoots.size, 1);
   });
 
   it("resolves local assets inside the source file directory", async () => {
     const fixturePath = path.resolve("test/fixtures/sample-deck.html");
+    const localAssetRoots = new Map();
     const payload = await createLocalFilePayload(
       new URL(pathToFileURL(fixturePath).href),
       "127.0.0.1:4173",
+      localAssetRoots,
     );
-    const encodedRoot = payload.html.match(/\/api\/local-assets\/([^/]+)\//)[1];
+    const rootToken = payload.html.match(/\/api\/local-assets\/([^/]+)\//)[1];
 
     assert.equal(
-      resolveLocalAssetPath(encodedRoot, "sample-deck.html"),
+      resolveLocalAssetPath(localAssetRoots, rootToken, "sample-deck.html"),
       fixturePath,
     );
   });
 
   it("rejects local asset traversal outside the source file directory", async () => {
     const fixturePath = path.resolve("test/fixtures/sample-deck.html");
+    const localAssetRoots = new Map();
     const payload = await createLocalFilePayload(
       new URL(pathToFileURL(fixturePath).href),
       "127.0.0.1:4173",
+      localAssetRoots,
     );
-    const encodedRoot = payload.html.match(/\/api\/local-assets\/([^/]+)\//)[1];
+    const rootToken = payload.html.match(/\/api\/local-assets\/([^/]+)\//)[1];
 
     assert.throws(
-      () => resolveLocalAssetPath(encodedRoot, "../sample-deck.html"),
+      () => resolveLocalAssetPath(localAssetRoots, rootToken, "../sample-deck.html"),
       /outside the source directory/i,
+    );
+  });
+
+  it("rejects local asset roots that were not issued by a loaded file", () => {
+    assert.throws(
+      () => resolveLocalAssetPath(new Map(), "not-issued-by-server", "sample-deck.html"),
+      /unknown local asset root/i,
     );
   });
 
