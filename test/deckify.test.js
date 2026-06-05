@@ -97,6 +97,20 @@ describe("detectBoundaryMode", () => {
     );
   });
 
+  it("falls back to explicit slide comments before headings", () => {
+    assert.equal(
+      detectBoundaryMode("<main><h1>One</h1><!-- slide --><h1>Two</h1></main>", "section"),
+      "slide-comment",
+    );
+  });
+
+  it("falls back to horizontal rules before headings", () => {
+    assert.equal(
+      detectBoundaryMode("<main><h1>One</h1><hr><h1>Two</h1></main>", "section"),
+      "horizontal-rule",
+    );
+  });
+
   it("falls back to a single document slide when no boundaries are visible", () => {
     assert.equal(detectBoundaryMode("<main><p>One continuous page</p></main>", "section"), "document");
   });
@@ -186,6 +200,52 @@ describe("generated deck extraction", () => {
     assert.equal(result.mode, "selector");
     assert.equal(result.slides.length, 2);
     assert.match(result.slides[1].html, /<h1>Two<\/h1>/);
+  });
+
+  it("splits Claude-style slide comments when no selector matches", () => {
+    const html = `<!doctype html>
+      <html>
+        <head><title>Comment Deck</title></head>
+        <body>
+          <main>
+            <h1>One</h1>
+            <p>First slide</p>
+            <!-- slide -->
+            <h1>Two</h1>
+            <p>Second slide</p>
+          </main>
+        </body>
+      </html>`;
+    const result = extractSlides(html, { selector: ".missing" });
+
+    assert.equal(result.mode, "slide-comment");
+    assert.equal(result.slides.length, 2);
+    assert.match(result.slides[0].html, /First slide/);
+    assert.doesNotMatch(result.slides[0].html, /Second slide/);
+    assert.match(result.slides[1].html, /Second slide/);
+  });
+
+  it("splits horizontal-rule decks when no selector matches", () => {
+    const html = `<!doctype html>
+      <html>
+        <head><title>HR Deck</title></head>
+        <body>
+          <main>
+            <h1>One</h1>
+            <p>First slide</p>
+            <hr>
+            <h1>Two</h1>
+            <p>Second slide</p>
+          </main>
+        </body>
+      </html>`;
+    const result = extractSlides(html, { selector: ".missing" });
+
+    assert.equal(result.mode, "horizontal-rule");
+    assert.equal(result.slides.length, 2);
+    assert.match(result.slides[0].html, /First slide/);
+    assert.doesNotMatch(result.slides[0].html, /Second slide/);
+    assert.match(result.slides[1].html, /Second slide/);
   });
 
   it("keeps runtime scripts for ordinary sectioned HTML pages", () => {

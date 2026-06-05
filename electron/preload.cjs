@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld("htmlPresenter", {
     return ipcRenderer.invoke("file:read-dropped", filePath);
   },
 
+  writeClipboardText(text) {
+    return ipcRenderer.invoke("clipboard:write-text", text);
+  },
+
   toggleFullscreen() {
     return ipcRenderer.invoke("app:toggle-fullscreen");
   },
