@@ -59,6 +59,21 @@ describe("Confetti Studio visual system", () => {
     assert.doesNotMatch(rendererApp, /thumbnail-empty">No slides</);
   });
 
+  it("carries Confetti Studio into loaded deck and presenter surfaces", () => {
+    assert.match(rendererHtml, /class="rail-header"/);
+    assert.match(rendererHtml, /id="deckCountBadge"/);
+    assert.match(rendererHtml, /class="control-dock"/);
+    assert.match(rendererHtml, /class="slide-meter"/);
+    assert.match(rendererApp, /thumbnail-index/);
+    assert.match(rendererApp, /presenter-panel-empty/);
+    assert.match(rendererApp, /Ready to present/);
+    assert.match(rendererStyles, /\.thumbnail-button::before/);
+    assert.match(rendererStyles, /\.thumbnail-index/);
+    assert.match(rendererStyles, /\.presenter-panel-empty/);
+    assert.match(rendererStyles, /\.control-dock/);
+    assert.match(rendererStyles, /\.slide-meter/);
+  });
+
   it("uses TaDa! casing in exported show chrome", () => {
     assert.match(deckify, /TaDa! show/);
     assert.match(deckify, /title="TaDa! show slide"/);

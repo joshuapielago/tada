@@ -145,6 +145,14 @@
             </button>
           </div>
 
+          <div class="rail-header" aria-live="polite">
+            <div class="rail-copy">
+              <span>Deck rail</span>
+              <strong id="railTitle">No deck loaded</strong>
+            </div>
+            <span class="deck-count-badge" id="deckCountBadge" aria-label="No slides loaded">0</span>
+          </div>
+
           <section class="panel-section" id="thumbnailPanel" role="tabpanel" aria-labelledby="thumbnailsTab"></section>
 
           <section class="panel-section presenter-panel" id="presenterPanel" role="tabpanel" aria-labelledby="presenterTab" hidden>
@@ -219,28 +227,33 @@
           </div>
 
           <footer class="control-bar" aria-label="Slide controls">
-            <button class="icon-button" id="prevButton" type="button" aria-label="Previous slide" title="Previous slide">
-              <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
-            </button>
-            <div class="slide-readout" aria-live="polite">
-              <strong id="slidePosition">0 / 0</strong>
-              <span id="modeLabel">section</span>
+            <div class="control-dock">
+              <button class="icon-button" id="prevButton" type="button" aria-label="Previous slide" title="Previous slide">
+                <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
+              </button>
+              <div class="slide-readout" aria-live="polite">
+                <strong id="slidePosition">0 / 0</strong>
+                <span id="modeLabel">section</span>
+                <div class="slide-meter" aria-hidden="true">
+                  <span id="slideMeterFill"></span>
+                </div>
+              </div>
+              <button class="icon-button" id="nextButton" type="button" aria-label="Next slide" title="Next slide">
+                <svg class="icon" aria-hidden="true"><use href="#icon-chevron-right"></use></svg>
+              </button>
+              <label class="selector-field">
+                <span>Slides</span>
+                <input id="selectorInput" type="text" value="section" spellcheck="false" aria-label="Slide selector">
+              </label>
+              <label class="fit-field">
+                <span>Fit</span>
+                <select id="fitMode">
+                  <option value="fit">16:9</option>
+                  <option value="fill">Fill</option>
+                  <option value="scroll">Scroll</option>
+                </select>
+              </label>
             </div>
-            <button class="icon-button" id="nextButton" type="button" aria-label="Next slide" title="Next slide">
-              <svg class="icon" aria-hidden="true"><use href="#icon-chevron-right"></use></svg>
-            </button>
-            <label class="selector-field">
-              <span>Slides</span>
-              <input id="selectorInput" type="text" value="section" spellcheck="false" aria-label="Slide selector">
-            </label>
-            <label class="fit-field">
-              <span>Fit</span>
-              <select id="fitMode">
-                <option value="fit">16:9</option>
-                <option value="fill">Fill</option>
-                <option value="scroll">Scroll</option>
-              </select>
-            </label>
           </footer>
         </section>
       </main>

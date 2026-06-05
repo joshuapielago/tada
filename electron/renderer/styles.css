@@ -363,7 +363,7 @@ body.side-collapsed .workspace {
 
 .side-panel {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   min-height: 0;
   border-right: 1px solid #3c2a47;
   background:
@@ -382,6 +382,57 @@ body.side-collapsed .side-panel {
   gap: var(--space-2);
   padding: var(--space-3);
   border-bottom: 1px solid #3c2a47;
+}
+
+.rail-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border-bottom: 1px solid #3c2a47;
+  background:
+    linear-gradient(90deg, rgb(255 79 104 / 12%), transparent 70%),
+    rgb(255 255 255 / 3%);
+}
+
+.rail-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rail-copy span {
+  color: var(--confetti-yellow);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.rail-copy strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-count-badge {
+  display: grid;
+  min-width: 38px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgb(50 198 177 / 50%);
+  border-radius: var(--radius);
+  background: rgb(50 198 177 / 14%);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 800;
 }
 
 .tab-button {
@@ -426,23 +477,55 @@ body.side-collapsed .side-panel {
 }
 
 .thumbnail-button {
+  position: relative;
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
+  grid-template-columns: 30px 86px minmax(0, 1fr);
   gap: var(--space-3);
   align-items: center;
   width: 100%;
   min-height: 66px;
-  padding: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
   border-color: #443050;
   background: rgb(255 255 255 / 5%);
   color: var(--paper);
   text-align: left;
 }
 
+.thumbnail-button::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--confetti-coral);
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
 .thumbnail-button.is-active {
   border-color: var(--good);
-  background: rgb(50 198 177 / 12%);
-  box-shadow: inset 3px 0 0 var(--good);
+  background:
+    linear-gradient(90deg, rgb(50 198 177 / 14%), rgb(124 77 255 / 10%)),
+    rgb(255 255 255 / 6%);
+  box-shadow:
+    inset 3px 0 0 var(--good),
+    0 14px 34px rgb(0 0 0 / 18%);
+}
+
+.thumbnail-button.is-active::before {
+  opacity: 1;
+}
+
+.thumbnail-index {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  color: var(--confetti-yellow);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 
 .thumbnail-preview {
@@ -527,6 +610,16 @@ body.side-collapsed .side-panel {
   font-size: 0.92rem;
   line-height: 1.45;
   white-space: pre-wrap;
+}
+
+.notes-block p.presenter-panel-empty {
+  display: grid;
+  min-height: 126px;
+  place-items: center;
+  border: 1px dashed #5a4268;
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  text-align: center;
 }
 
 .presentation-area {
@@ -810,6 +903,10 @@ body.side-collapsed .side-panel {
 
 .control-bar {
   justify-self: center;
+  max-width: 100%;
+}
+
+.control-dock {
   display: grid;
   grid-template-columns: 38px minmax(112px, auto) 38px minmax(130px, 170px) minmax(110px, auto);
   gap: var(--space-2);
@@ -818,7 +915,9 @@ body.side-collapsed .side-panel {
   padding: var(--space-2);
   border: 1px solid var(--line-light);
   border-radius: 10px;
-  background: rgb(255 253 253 / 94%);
+  background:
+    radial-gradient(circle at 10% 0%, rgb(255 210 79 / 18%) 0 10px, transparent 11px),
+    rgb(255 253 253 / 94%);
   color: var(--ink);
   box-shadow: 0 16px 40px var(--shadow);
 }
@@ -848,6 +947,23 @@ body.side-collapsed .side-panel {
   color: var(--ink-muted);
   font-size: 0.7rem;
   font-weight: 700;
+}
+
+.slide-meter {
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line-light);
+}
+
+.slide-meter span {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--confetti-coral), var(--confetti-mint));
+  transition: width 180ms ease;
 }
 
 .selector-field,
@@ -994,7 +1110,7 @@ body.presenting .presentation-exit-button {
     grid-template-columns: 280px minmax(0, 1fr);
   }
 
-  .control-bar {
+  .control-dock {
     grid-template-columns: 38px minmax(90px, auto) 38px minmax(120px, 150px) minmax(96px, auto);
   }
 }
