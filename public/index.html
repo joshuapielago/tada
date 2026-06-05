@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>tada</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="source-band" aria-label="Presentation source">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <h1>tada</h1>
+            <p id="sourceStatus">No deck loaded</p>
+          </div>
+        </div>
+
+        <form class="source-form" id="sourceForm">
+          <label class="field url-field">
+            <span>Source</span>
+            <input id="urlInput" type="text" inputmode="url" autocomplete="off" placeholder="localhost:3000/demo.html, example.com/deck, file:///...">
+          </label>
+
+          <label class="field selector-field">
+            <span>Slides</span>
+            <input id="selectorInput" type="text" value="section" spellcheck="false" aria-label="Slide selector">
+          </label>
+
+          <button class="command-button primary-command" id="loadUrlButton" type="submit">Load</button>
+
+          <label class="command-button file-command">
+            File
+            <input id="fileInput" type="file" accept=".html,.htm,text/html">
+          </label>
+        </form>
+      </header>
+
+      <section class="presentation-shell" id="presentationShell" aria-label="Presentation viewer" tabindex="-1">
+        <div class="drop-layer" id="dropLayer" hidden>Drop HTML file</div>
+
+        <div class="stage fit-frame" id="stage">
+          <div class="empty-state" id="emptyState">
+            <strong>Load an HTML file or URL</strong>
+            <span>Sections become slides.</span>
+          </div>
+          <button class="stage-nav stage-nav-previous" id="prevStageButton" type="button" aria-label="Previous slide" title="Previous slide" hidden>
+            <span aria-hidden="true">←</span>
+          </button>
+          <iframe
+            id="slideFrame"
+            title="Presented HTML slide"
+            sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+            hidden
+          ></iframe>
+          <button class="stage-nav stage-nav-next" id="nextStageButton" type="button" aria-label="Next slide" title="Next slide" hidden>
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+
+        <div class="control-dock" aria-label="Presentation controls">
+          <button class="icon-button" id="prevButton" type="button" aria-label="Previous slide" title="Previous slide">
+            <span aria-hidden="true">←</span>
+          </button>
+          <div class="slide-readout" aria-live="polite">
+            <span id="slidePosition">0 / 0</span>
+            <span id="modeLabel">section</span>
+          </div>
+          <button class="icon-button" id="nextButton" type="button" aria-label="Next slide" title="Next slide">
+            <span aria-hidden="true">→</span>
+          </button>
+          <div class="dock-separator" aria-hidden="true"></div>
+          <label class="fit-select">
+            <span>Fit</span>
+            <select id="fitMode">
+              <option value="fit">16:9</option>
+              <option value="fill">Fill</option>
+              <option value="scroll">Scroll</option>
+            </select>
+          </label>
+          <button class="icon-button" id="fullscreenButton" type="button" aria-label="Fullscreen" title="Fullscreen">
+            <span aria-hidden="true">□</span>
+          </button>
+        </div>
+
+        <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+      </section>
+    </main>
+  </body>
+</html>

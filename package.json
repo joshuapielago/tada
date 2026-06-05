@@ -1,0 +1,92 @@
+{
+  "name": "tada",
+  "productName": "Tada!",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Present any HTML file or URL like a slide deck.",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "node server.js",
+    "electron": "electron .",
+    "electron:dev": "electron .",
+    "pack": "electron-builder --dir --publish never -c.mac.identity=null",
+    "dist": "electron-builder --mac --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "release": "electron-builder --mac --win --publish always",
+    "test": "node --test test/*.test.js test/*.test.cjs"
+  },
+  "author": "Tada",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "^42.3.3",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3"
+  },
+  "build": {
+    "appId": "app.tada.presenter",
+    "productName": "Tada!",
+    "artifactName": "Tada-${version}-${os}-${arch}.${ext}",
+    "asar": true,
+    "electronUpdaterCompatibility": ">=2.16",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "src/shared/**/*",
+      "package.json",
+      "node_modules/**/*",
+      "!docs{,/**}",
+      "!test{,/**}",
+      "!public{,/**}",
+      "!server.js",
+      "!*.md"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "html",
+          "htm"
+        ],
+        "name": "HTML Presentation",
+        "description": "Open HTML files in Tada",
+        "role": "Viewer"
+      }
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "joshuapielago",
+      "repo": "tada"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "icon": "build/icon.icns",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true
+    }
+  }
+}
