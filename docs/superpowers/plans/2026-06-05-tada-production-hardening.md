@@ -1,8 +1,8 @@
-# Tada Production Hardening Implementation Plan
+# TaDa! Production Hardening Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make Tada installable and supportable for macOS and Windows teams, with update checks, safer Electron defaults, and repeatable release instructions.
+**Goal:** Make TaDa! installable and supportable for macOS and Windows teams, with update checks, safer Electron defaults, and repeatable release instructions.
 
 **Architecture:** Use `electron-builder` for distributable macOS/Windows artifacts and `electron-updater` for update checks. Keep the app's privileged operations in the main process/preload bridge, expose only narrow IPC APIs to the renderer, and keep untrusted presentation HTML inside sandboxed iframes.
 
@@ -29,7 +29,7 @@ const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 describe("production package configuration", () => {
   it("declares installable macOS and Windows build targets", () => {
     assert.equal(packageJson.name, "tada");
-    assert.equal(packageJson.productName, "Tada!");
+    assert.equal(packageJson.productName, "TaDa!");
     assert.ok(packageJson.build.appId);
     assert.deepEqual(packageJson.build.mac.target, ["dmg", "zip"]);
     assert.deepEqual(packageJson.build.win.target, ["nsis"]);

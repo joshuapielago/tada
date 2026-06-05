@@ -35,7 +35,7 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-app.setName("Tada!");
+app.setName("TaDa!");
 
 app.on("open-file", (event, filePath) => {
   event.preventDefault();
@@ -72,8 +72,8 @@ function createMainWindow() {
     minWidth: 900,
     minHeight: 640,
     show: false,
-    title: "Tada!",
-    backgroundColor: "#171614",
+    title: "TaDa!",
+    backgroundColor: "#1b0f26",
     titleBarStyle: isMac ? "hiddenInset" : "default",
     trafficLightPosition: { x: 18, y: 18 },
     webPreferences: {
@@ -443,15 +443,15 @@ async function showOpenFileDialog() {
 async function saveShowHtml(event, payload) {
   const window = BrowserWindow.fromWebContents(event.sender) ?? mainWindow ?? undefined;
   const html = String(payload?.html ?? "");
-  const sourceLabel = String(payload?.sourceLabel ?? "tada-show").replace(/\.html?$/i, "");
-  const defaultPath = `${safeFileBaseName(sourceLabel) || "tada-show"}.show.html`;
+  const sourceLabel = String(payload?.sourceLabel ?? "TaDa-show").replace(/\.html?$/i, "");
+  const defaultPath = `${safeFileBaseName(sourceLabel) || "TaDa-show"}.show.html`;
 
   if (!html.trim()) {
     throw new Error("There is no presentation to export.");
   }
 
   const result = await dialog.showSaveDialog(window, {
-    title: "Export tada show",
+    title: "Export TaDa! show",
     defaultPath,
     filters: [
       { name: "HTML Show", extensions: ["html"] },

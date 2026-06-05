@@ -1,6 +1,6 @@
-# Tada!
+# TaDa!
 
-Tada presents HTML files and URLs like slide decks. It is built for generated HTML decks from tools like Claude and Codex, but it also works with normal sectioned HTML documents.
+TaDa! presents HTML files and URLs like slide decks. It is built for generated HTML decks from tools like Claude and Codex, but it also works with normal sectioned HTML documents.
 
 ## Run Locally
 

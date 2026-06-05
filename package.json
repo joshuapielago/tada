@@ -1,6 +1,6 @@
 {
   "name": "tada",
-  "productName": "Tada!",
+  "productName": "TaDa!",
   "version": "0.1.0",
   "private": true,
   "description": "Present any HTML file or URL like a slide deck.",
@@ -17,7 +17,7 @@
     "release": "electron-builder --mac --win --publish always",
     "test": "node --test test/*.test.js test/*.test.cjs"
   },
-  "author": "Tada",
+  "author": "TaDa!",
   "license": "UNLICENSED",
   "devDependencies": {
     "electron": "^42.3.3",
@@ -28,8 +28,8 @@
   },
   "build": {
     "appId": "app.tada.presenter",
-    "productName": "Tada!",
-    "artifactName": "Tada-${version}-${os}-${arch}.${ext}",
+    "productName": "TaDa!",
+    "artifactName": "TaDa-${version}-${os}-${arch}.${ext}",
     "asar": true,
     "electronUpdaterCompatibility": ">=2.16",
     "directories": {
@@ -54,7 +54,7 @@
           "htm"
         ],
         "name": "HTML Presentation",
-        "description": "Open HTML files in Tada",
+        "description": "Open HTML files in TaDa!",
         "role": "Viewer"
       }
     ],

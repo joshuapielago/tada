@@ -549,7 +549,7 @@ function revokeStageDocumentUrl(sourceUrl) {
 
 function renderThumbnails() {
   if (state.slides.length === 0) {
-    elements.thumbnailPanel.innerHTML = '<div class="thumbnail-empty">No slides</div>';
+    elements.thumbnailPanel.innerHTML = '<div class="thumbnail-empty">No slides yet</div>';
     return;
   }
 
@@ -621,7 +621,7 @@ function updateControls() {
   elements.presentButton.disabled = !hasSlides;
   elements.exportShowButton.disabled = !hasSlides;
   elements.fullscreenButton.disabled = state.isPresenting;
-  elements.updateButton.textContent = updateButtonLabel(state.updateStatus);
+  updateUpdateButtonLabel();
   elements.updateButton.disabled = !state.updateStatus.canCheck && !state.updateStatus.canInstall;
   elements.panelToggle.setAttribute("aria-pressed", String(state.panelOpen));
 }
@@ -853,6 +853,17 @@ function updateButtonLabel(status) {
   if (status.canInstall) return "Install";
   if (["checking", "available", "downloading"].includes(status.status)) return "Updating";
   return "Update";
+}
+
+function updateUpdateButtonLabel() {
+  const label = updateButtonLabel(state.updateStatus);
+  const accessibleLabel =
+    label === "Install" ? "Install TaDa! update" :
+    label === "Updating" ? "Checking for TaDa! updates" :
+    "Check for TaDa! updates";
+  elements.updateButton.dataset.commandLabel = label;
+  elements.updateButton.setAttribute("aria-label", accessibleLabel);
+  elements.updateButton.title = accessibleLabel;
 }
 
 function sourceLabelFromUrl(value) {

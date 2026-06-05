@@ -318,7 +318,7 @@ describe("generated deck extraction", () => {
   });
 });
 
-describe("tada show export", () => {
+describe("TaDa! show export", () => {
   it("builds a standalone show document that starts in presentation mode", () => {
     const result = buildTadaShowDocument({
       title: "Client demo",
@@ -334,7 +334,7 @@ describe("tada show export", () => {
       ],
     });
 
-    assert.match(result, /<title>Client demo - tada show<\/title>/);
+    assert.match(result, /<title>Client demo - TaDa! show<\/title>/);
     assert.match(result, /Runtime one/);
     assert.doesNotMatch(result, /Static one/);
     assert.match(result, /data-tada-show/);

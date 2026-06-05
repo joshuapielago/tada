@@ -12,35 +12,122 @@
     <script type="module" src="./app.js"></script>
   </head>
   <body>
+    <svg class="icon-sprite" aria-hidden="true" focusable="false">
+      <symbol id="icon-sparkles" viewBox="0 0 24 24">
+        <path d="M12 3l1.6 4.1L18 9l-4.4 1.9L12 15l-1.6-4.1L6 9l4.4-1.9L12 3z"></path>
+        <path d="M19 14l.8 2.1L22 17l-2.2.9L19 20l-.8-2.1L16 17l2.2-.9L19 14z"></path>
+        <path d="M5 13l.7 1.8L8 16l-2.3 1.2L5 19l-.7-1.8L2 16l2.3-1.2L5 13z"></path>
+      </symbol>
+      <symbol id="icon-presentation" viewBox="0 0 24 24">
+        <path d="M4 4h16v11H4z"></path>
+        <path d="M12 15v5"></path>
+        <path d="M8 20h8"></path>
+        <path d="m10 8 4 2-4 2z"></path>
+      </symbol>
+      <symbol id="icon-folder-open" viewBox="0 0 24 24">
+        <path d="M3 7h6l2 2h10v3"></path>
+        <path d="M3 7v13h17l2-9H6l-3 9"></path>
+      </symbol>
+      <symbol id="icon-export" viewBox="0 0 24 24">
+        <path d="M12 3v12"></path>
+        <path d="m7 8 5-5 5 5"></path>
+        <path d="M5 14v5h14v-5"></path>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M20 12a8 8 0 0 1-14 5"></path>
+        <path d="M4 12a8 8 0 0 1 14-5"></path>
+        <path d="M18 3v4h-4"></path>
+        <path d="M6 21v-4h4"></path>
+      </symbol>
+      <symbol id="icon-panel" viewBox="0 0 24 24">
+        <path d="M4 5h16v14H4z"></path>
+        <path d="M10 5v14"></path>
+      </symbol>
+      <symbol id="icon-fullscreen" viewBox="0 0 24 24">
+        <path d="M8 3H3v5"></path>
+        <path d="M16 3h5v5"></path>
+        <path d="M21 16v5h-5"></path>
+        <path d="M3 16v5h5"></path>
+      </symbol>
+      <symbol id="icon-link" viewBox="0 0 24 24">
+        <path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"></path>
+        <path d="M14 11a5 5 0 0 0-7.1 0l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"></path>
+      </symbol>
+      <symbol id="icon-slides" viewBox="0 0 24 24">
+        <path d="M5 5h14v10H5z"></path>
+        <path d="M8 19h8"></path>
+        <path d="M12 15v4"></path>
+      </symbol>
+      <symbol id="icon-presenter" viewBox="0 0 24 24">
+        <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
+        <path d="M5 21a7 7 0 0 1 14 0"></path>
+      </symbol>
+      <symbol id="icon-chevron-left" viewBox="0 0 24 24">
+        <path d="m15 18-6-6 6-6"></path>
+      </symbol>
+      <symbol id="icon-chevron-right" viewBox="0 0 24 24">
+        <path d="m9 18 6-6-6-6"></path>
+      </symbol>
+      <symbol id="icon-upload" viewBox="0 0 24 24">
+        <path d="M12 16V4"></path>
+        <path d="m7 9 5-5 5 5"></path>
+        <path d="M5 16v4h14v-4"></path>
+      </symbol>
+      <symbol id="icon-wand" viewBox="0 0 24 24">
+        <path d="m3 21 9-9"></path>
+        <path d="m10 5 2-2 3 3-2 2z"></path>
+        <path d="M16 4h.01"></path>
+        <path d="M20 8h.01"></path>
+        <path d="M18 14h.01"></path>
+        <path d="M8 2h.01"></path>
+      </symbol>
+    </svg>
+
     <div class="app-shell">
       <header class="toolbar" aria-label="Presentation controls">
-        <div class="title-lockup">
-          <strong>TaDa!</strong>
-          <span id="sourceLabel">No deck loaded</span>
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">
+            <svg class="icon"><use href="#icon-sparkles"></use></svg>
+          </div>
+          <div class="title-lockup">
+            <strong>TaDa!</strong>
+            <span id="sourceLabel">No deck loaded</span>
+          </div>
         </div>
 
         <form class="source-form" id="sourceForm">
-          <input
-            id="sourceInput"
-            type="text"
-            spellcheck="false"
-            autocomplete="off"
-            placeholder="URL, localhost URL, file:// URL, or local path"
-            aria-label="Source URL or path"
-          >
+          <label class="source-input-wrap">
+            <svg class="icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+            <input
+              id="sourceInput"
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="URL, localhost URL, file:// URL, or local path"
+              aria-label="Source URL or path"
+            >
+          </label>
           <button class="button primary" id="loadSourceButton" type="submit">Load</button>
         </form>
 
         <div class="toolbar-actions">
-          <button class="button primary" id="presentButton" type="button" title="Start presentation">Present</button>
-          <button class="button" id="openButton" type="button" title="Open HTML file">Open</button>
-          <button class="button" id="exportShowButton" type="button" title="Export standalone tada show">Export</button>
-          <button class="button" id="updateButton" type="button" title="Check for Tada updates">Update</button>
+          <button class="icon-button command-button command-primary" id="presentButton" type="button" aria-label="Start presentation" title="Start presentation">
+            <svg class="icon"><use href="#icon-presentation"></use></svg>
+          </button>
+          <button class="icon-button command-button" id="openButton" type="button" aria-label="Open HTML file" title="Open HTML file">
+            <svg class="icon"><use href="#icon-folder-open"></use></svg>
+          </button>
+          <button class="icon-button command-button" id="exportShowButton" type="button" aria-label="Export standalone TaDa! show" title="Export standalone TaDa! show">
+            <svg class="icon"><use href="#icon-export"></use></svg>
+          </button>
+          <button class="icon-button command-button" id="updateButton" type="button" aria-label="Check for TaDa! updates" title="Check for TaDa! updates">
+            <svg class="icon"><use href="#icon-refresh"></use></svg>
+          </button>
           <button class="icon-button" id="panelToggle" type="button" aria-label="Toggle side panel" title="Side panel">
-            <span aria-hidden="true">|||</span>
+            <svg class="icon"><use href="#icon-panel"></use></svg>
           </button>
           <button class="icon-button" id="fullscreenButton" type="button" aria-label="Toggle fullscreen" title="Fullscreen">
-            <span aria-hidden="true">[]</span>
+            <svg class="icon"><use href="#icon-fullscreen"></use></svg>
           </button>
         </div>
       </header>
@@ -49,9 +136,11 @@
         <aside class="side-panel" id="sidePanel" aria-label="Slide panel">
           <div class="panel-tabs" role="tablist" aria-label="Panel mode">
             <button class="tab-button is-active" data-panel-tab="thumbnails" id="thumbnailsTab" type="button" role="tab" aria-selected="true">
+              <svg class="icon" aria-hidden="true"><use href="#icon-slides"></use></svg>
               Slides
             </button>
             <button class="tab-button" data-panel-tab="presenter" id="presenterTab" type="button" role="tab" aria-selected="false">
+              <svg class="icon" aria-hidden="true"><use href="#icon-presenter"></use></svg>
               Presenter
             </button>
           </div>
@@ -83,12 +172,18 @@
         </aside>
 
         <section class="presentation-area" id="presentationArea" tabindex="-1" aria-label="Presentation stage">
-          <div class="drop-layer" id="dropLayer" hidden>Drop HTML</div>
-          <button class="presentation-exit-button" id="exitPresentationButton" type="button" hidden>Exit</button>
+          <div class="drop-layer" id="dropLayer" hidden>
+            <svg class="icon" aria-hidden="true"><use href="#icon-upload"></use></svg>
+            <strong>Release to open this deck.</strong>
+          </div>
+          <button class="presentation-exit-button" id="exitPresentationButton" type="button" hidden aria-label="Exit presentation" title="Exit presentation">
+            Exit
+          </button>
 
           <div class="stage fit-frame" id="stage">
             <div class="empty-state" id="emptyState">
-              <div class="empty-state-mark" aria-hidden="true">
+              <div class="empty-state-illustration" aria-hidden="true">
+                <svg class="icon"><use href="#icon-wand"></use></svg>
                 <span></span>
                 <span></span>
                 <span></span>
@@ -108,7 +203,7 @@
             </div>
 
             <button class="stage-nav stage-nav-previous" id="prevStageButton" type="button" aria-label="Previous slide" title="Previous slide" hidden>
-              <span aria-hidden="true">&lt;</span>
+              <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
             </button>
 
             <iframe
@@ -119,20 +214,20 @@
             ></iframe>
 
             <button class="stage-nav stage-nav-next" id="nextStageButton" type="button" aria-label="Next slide" title="Next slide" hidden>
-              <span aria-hidden="true">&gt;</span>
+              <svg class="icon" aria-hidden="true"><use href="#icon-chevron-right"></use></svg>
             </button>
           </div>
 
           <footer class="control-bar" aria-label="Slide controls">
             <button class="icon-button" id="prevButton" type="button" aria-label="Previous slide" title="Previous slide">
-              <span aria-hidden="true">&lt;</span>
+              <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
             </button>
             <div class="slide-readout" aria-live="polite">
               <strong id="slidePosition">0 / 0</strong>
               <span id="modeLabel">section</span>
             </div>
             <button class="icon-button" id="nextButton" type="button" aria-label="Next slide" title="Next slide">
-              <span aria-hidden="true">&gt;</span>
+              <svg class="icon" aria-hidden="true"><use href="#icon-chevron-right"></use></svg>
             </button>
             <label class="selector-field">
               <span>Slides</span>

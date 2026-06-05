@@ -7,7 +7,7 @@ const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 describe("production package configuration", () => {
   it("declares installable macOS and Windows build targets", () => {
     assert.equal(packageJson.name, "tada");
-    assert.equal(packageJson.productName, "Tada!");
+    assert.equal(packageJson.productName, "TaDa!");
     assert.equal(packageJson.main, "electron/main.cjs");
     assert.match(packageJson.build.appId, /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/);
     assert.equal(packageJson.build.mac.icon, "build/icon.icns");
