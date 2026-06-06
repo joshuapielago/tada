@@ -136,20 +136,39 @@ describe("Electron desktop smoke and load coverage", () => {
 
     try {
       const page = await connectToRenderer(app.port);
-      await waitFor(async () => (await readPageState(page)).thumbnails === 12, { timeoutMs: 12000 });
+      await waitFor(async () => (await readPageState(page)).thumbnails >= 8, { timeoutMs: 12000 });
 
-      await clickThumbnail(page, 6);
-      await waitFor(async () => (await readPageState(page)).position === "7 / 12", { timeoutMs: 12000 });
+      await assertProductDeckSlidesFit(page, app.port);
+
+      await clickThumbnail(page, 1);
+      await waitFor(async () => (await readPageState(page)).position === "2 / 10", { timeoutMs: 12000 });
+      const layoutState = await waitForFrameState(
+        app.port,
+        (state) =>
+          isOnlyVisibleSlide(state, 1, /AI writes HTML/) &&
+          state.activeSlideDisplay === "grid" &&
+          state.activeSlideScrollWidth <= state.viewportWidth + 2,
+        { timeoutMs: 12000 },
+      );
+
+      assert.equal(layoutState.activeSlideDisplay, "grid");
+      assert.ok(
+        layoutState.activeSlideScrollWidth <= layoutState.viewportWidth + 2,
+        `slide overflowed horizontally: ${layoutState.activeSlideScrollWidth}px > ${layoutState.viewportWidth}px`,
+      );
+
+      await clickThumbnail(page, 4);
+      await waitFor(async () => (await readPageState(page)).position === "5 / 10", { timeoutMs: 12000 });
       const frameState = await waitForFrameState(
         app.port,
-        (state) => isOnlyVisibleSlide(state, 6, /The Ely demo becomes a client-ready show/),
+        (state) => isOnlyVisibleSlide(state, 4, /A real client deck becomes a show/),
         { timeoutMs: 12000 },
       );
 
       assert.equal(frameState.visibleIndexes.length, 1);
-      assert.equal(frameState.visibleIndexes[0], 6);
-      assert.match(frameState.bodyText, /The Ely demo becomes a client-ready show/);
-      assert.doesNotMatch(frameState.bodyText, /Present any HTML like a deck/);
+      assert.equal(frameState.visibleIndexes[0], 4);
+      assert.match(frameState.bodyText, /A real client deck becomes a show/);
+      assert.doesNotMatch(frameState.bodyText, /Present HTML like a deck/);
       await page.close();
     } finally {
       await app.close();
@@ -270,10 +289,17 @@ async function readFrameState(port) {
           .map((element, index) => ({ element, index, style: getComputedStyle(element) }))
           .filter(({ element, style }) => element.getAttribute("aria-hidden") === "false" || (style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity || "1") > 0))
           .map(({ index }) => index);
+        const activeSlide = visibleIndexes.length === 1 ? candidates[visibleIndexes[0]] : null;
+        const activeStyle = activeSlide ? getComputedStyle(activeSlide) : null;
         return {
           bodyText: document.body.innerText,
           generatedBooted: Boolean(window.generatedBooted),
           sectionBooted: Boolean(window.sectionDeckBooted),
+          activeSlideDisplay: activeStyle?.display ?? "",
+          activeSlideScrollWidth: activeSlide?.scrollWidth ?? 0,
+          activeSlideScrollHeight: activeSlide?.scrollHeight ?? 0,
+          viewportWidth: document.documentElement.clientWidth,
+          viewportHeight: document.documentElement.clientHeight,
           visibleIndexes,
         };
       })()`,
@@ -292,6 +318,28 @@ function waitForFrameState(port, predicate, options = {}) {
 
 function isOnlyVisibleSlide(state, index, textPattern) {
   return state.visibleIndexes.length === 1 && state.visibleIndexes[0] === index && textPattern.test(state.bodyText);
+}
+
+async function assertProductDeckSlidesFit(page, port) {
+  const { thumbnails } = await readPageState(page);
+  for (let index = 0; index < thumbnails; index += 1) {
+    await clickThumbnail(page, index);
+    await waitFor(async () => (await readPageState(page)).activeThumb === String(index), { timeoutMs: 12000 });
+    const frameState = await waitForFrameState(
+      port,
+      (state) => state.visibleIndexes.length === 1 && state.visibleIndexes[0] === index,
+      { timeoutMs: 12000 },
+    );
+
+    assert.ok(
+      frameState.activeSlideScrollWidth <= frameState.viewportWidth + 2,
+      `product deck slide ${index + 1} overflowed horizontally: ${frameState.activeSlideScrollWidth}px > ${frameState.viewportWidth}px`,
+    );
+    assert.ok(
+      frameState.activeSlideScrollHeight <= frameState.viewportHeight + 2,
+      `product deck slide ${index + 1} overflowed vertically: ${frameState.activeSlideScrollHeight}px > ${frameState.viewportHeight}px`,
+    );
+  }
 }
 
 async function waitForTarget(port, predicate, options = {}) {

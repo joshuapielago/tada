@@ -146,7 +146,6 @@ export function buildSlideDocument({ headHtml = "", bodyAttributes = "", content
       .deckify-visible.active,
       .deckify-visible.current,
       .deckify-visible.present {
-        display: flex !important;
         opacity: 1 !important;
         visibility: visible !important;
         transform: none !important;
@@ -754,7 +753,7 @@ function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELEC
       slide.setAttribute("aria-hidden", active ? "false" : "true");
       slide.style.setProperty("transition", "none", "important");
       if (active) {
-        slide.style.setProperty("display", "flex", "important");
+        slide.style.removeProperty("display");
         slide.style.setProperty("opacity", "1", "important");
         slide.style.setProperty("visibility", "visible", "important");
         slide.style.setProperty("transform", "none", "important");
