@@ -1,4 +1,4 @@
-# Tada Release Guide
+# TaDa! Release Guide
 
 This app is configured for direct team distribution on macOS and Windows using `electron-builder` and `electron-updater`.
 
@@ -64,7 +64,7 @@ If the same signing certificate is used for all platforms, `CSC_LINK` and `CSC_K
 4. Build signed installers on the correct CI runner or release machine.
 5. Publish with `npm run release`.
 6. Install the previous version on a clean machine.
-7. Click **Update** in Tada and confirm the update downloads and the **Install** action restarts into the new version.
+7. Click **Update** in TaDa! and confirm the update downloads and the **Install** action restarts into the new version.
 
 ## Known Production Prerequisites
 

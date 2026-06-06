@@ -46,6 +46,8 @@ const elements = {
   panelToggle: document.querySelector("#panelToggle"),
   fullscreenButton: document.querySelector("#fullscreenButton"),
   sidePanel: document.querySelector("#sidePanel"),
+  railTitle: document.querySelector("#railTitle"),
+  deckCountBadge: document.querySelector("#deckCountBadge"),
   thumbnailPanel: document.querySelector("#thumbnailPanel"),
   presenterPanel: document.querySelector("#presenterPanel"),
   currentTitle: document.querySelector("#currentTitle"),
@@ -64,6 +66,7 @@ const elements = {
   prevButton: document.querySelector("#prevButton"),
   nextButton: document.querySelector("#nextButton"),
   slidePosition: document.querySelector("#slidePosition"),
+  slideMeterFill: document.querySelector("#slideMeterFill"),
   modeLabel: document.querySelector("#modeLabel"),
   selectorInput: document.querySelector("#selectorInput"),
   fitMode: document.querySelector("#fitMode"),
@@ -549,7 +552,7 @@ function revokeStageDocumentUrl(sourceUrl) {
 
 function renderThumbnails() {
   if (state.slides.length === 0) {
-    elements.thumbnailPanel.innerHTML = '<div class="thumbnail-empty">No slides</div>';
+    elements.thumbnailPanel.innerHTML = '<div class="thumbnail-empty">No slides yet</div>';
     return;
   }
 
@@ -579,6 +582,10 @@ function renderThumbnails() {
     const meta = document.createElement("div");
     meta.className = "thumbnail-meta";
 
+    const indexMark = document.createElement("span");
+    indexMark.className = "thumbnail-index";
+    indexMark.textContent = String(index + 1).padStart(2, "0");
+
     const title = document.createElement("strong");
     title.textContent = slide.title || `Slide ${index + 1}`;
 
@@ -586,7 +593,7 @@ function renderThumbnails() {
     detail.textContent = `${index + 1} of ${state.slides.length}`;
 
     meta.append(title, detail);
-    button.append(preview, meta);
+    button.append(indexMark, preview, meta);
     list.append(button);
   });
 
@@ -599,7 +606,9 @@ function renderPresenterPanel() {
 
   elements.currentTitle.textContent = currentSlide?.title || (currentSlide ? `Slide ${state.index + 1}` : "No deck loaded");
   elements.nextTitle.textContent = nextSlide?.title || (nextSlide ? `Slide ${state.index + 2}` : "None");
-  elements.notesText.textContent = currentSlide?.notes || "";
+  const notes = currentSlide?.notes?.trim() ?? "";
+  elements.notesText.textContent = notes || "No speaker notes for this slide.";
+  elements.notesText.classList.toggle("presenter-panel-empty", !notes);
   elements.elapsedTime.textContent = formatElapsed();
 }
 
@@ -609,8 +618,16 @@ function renderUpdateStatus() {
 
 function updateControls() {
   const hasSlides = state.slides.length > 0;
+  document.body.classList.toggle("has-deck", hasSlides);
   elements.sourceLabel.textContent = state.sourceLabel;
+  elements.railTitle.textContent = hasSlides ? "Ready to present" : "No deck loaded";
+  elements.deckCountBadge.textContent = String(state.slides.length);
+  elements.deckCountBadge.setAttribute(
+    "aria-label",
+    hasSlides ? `${state.slides.length} slides loaded` : "No slides loaded",
+  );
   elements.slidePosition.textContent = hasSlides ? `${state.index + 1} / ${state.slides.length}` : "0 / 0";
+  elements.slideMeterFill.style.width = hasSlides ? `${((state.index + 1) / state.slides.length) * 100}%` : "0%";
   elements.modeLabel.textContent = hasSlides ? state.mode : normalizeSelector(elements.selectorInput.value);
   elements.prevButton.disabled = !hasSlides || state.index === 0;
   elements.nextButton.disabled = !hasSlides || state.index === state.slides.length - 1;
@@ -621,7 +638,7 @@ function updateControls() {
   elements.presentButton.disabled = !hasSlides;
   elements.exportShowButton.disabled = !hasSlides;
   elements.fullscreenButton.disabled = state.isPresenting;
-  elements.updateButton.textContent = updateButtonLabel(state.updateStatus);
+  updateUpdateButtonLabel();
   elements.updateButton.disabled = !state.updateStatus.canCheck && !state.updateStatus.canInstall;
   elements.panelToggle.setAttribute("aria-pressed", String(state.panelOpen));
 }
@@ -853,6 +870,17 @@ function updateButtonLabel(status) {
   if (status.canInstall) return "Install";
   if (["checking", "available", "downloading"].includes(status.status)) return "Updating";
   return "Update";
+}
+
+function updateUpdateButtonLabel() {
+  const label = updateButtonLabel(state.updateStatus);
+  const accessibleLabel =
+    label === "Install" ? "Install TaDa! update" :
+    label === "Updating" ? "Checking for TaDa! updates" :
+    "Check for TaDa! updates";
+  elements.updateButton.dataset.commandLabel = label;
+  elements.updateButton.setAttribute("aria-label", accessibleLabel);
+  elements.updateButton.title = accessibleLabel;
 }
 
 function sourceLabelFromUrl(value) {

@@ -41,7 +41,7 @@ function createUpdateService({
 
     autoUpdater.on("update-available", (info) => {
       setStatus("available", {
-        message: `Downloading Tada ${formatVersion(info)}...`,
+        message: `Downloading TaDa! ${formatVersion(info)}...`,
         canCheck: false,
         canInstall: false,
         updateInfo: normalizeUpdateInfo(info),
@@ -50,7 +50,7 @@ function createUpdateService({
 
     autoUpdater.on("update-not-available", (info) => {
       setStatus("not-available", {
-        message: "Tada is up to date.",
+        message: "TaDa! is up to date.",
         canCheck: true,
         canInstall: false,
         updateInfo: normalizeUpdateInfo(info),
@@ -70,7 +70,7 @@ function createUpdateService({
 
     autoUpdater.on("update-downloaded", (info) => {
       setStatus("downloaded", {
-        message: `Tada ${formatVersion(info)} is ready to install.`,
+        message: `TaDa! ${formatVersion(info)} is ready to install.`,
         canCheck: true,
         canInstall: true,
         updateInfo: normalizeUpdateInfo(info),

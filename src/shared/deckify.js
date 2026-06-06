@@ -166,10 +166,10 @@ export function buildSlideDocument({ headHtml = "", bodyAttributes = "", content
 </html>`;
 }
 
-export function buildTadaShowDocument({ title = "tada show", mode = "document", slides = [] } = {}) {
-  const safeTitle = escapeHtml(title || "tada show");
+export function buildTadaShowDocument({ title = "TaDa! show", mode = "document", slides = [] } = {}) {
+  const safeTitle = escapeHtml(title || "TaDa! show");
   const payload = JSON.stringify({
-    title: title || "tada show",
+    title: title || "TaDa! show",
     mode,
     slides: slides.map((slide, index) => ({
       html: String(slide?.runtimeHtml ?? slide?.html ?? ""),
@@ -191,7 +191,7 @@ export function buildTadaShowDocument({ title = "tada show", mode = "document", 
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${safeTitle} - tada show</title>
+    <title>${safeTitle} - TaDa! show</title>
     <style>
       * { box-sizing: border-box; }
       html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #050505; }
@@ -237,7 +237,7 @@ export function buildTadaShowDocument({ title = "tada show", mode = "document", 
     <main class="app-shell presenting">
       <section class="stage">
         <div class="empty" id="emptyState">No slides</div>
-        <iframe id="slideFrame" title="tada show slide" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads" hidden></iframe>
+        <iframe id="slideFrame" title="TaDa! show slide" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads" hidden></iframe>
         <button class="nav-zone previous" id="previousButton" type="button" aria-label="Previous slide"></button>
         <button class="nav-zone next" id="nextButton" type="button" aria-label="Next slide"></button>
         <button class="exit-button" id="exitButton" type="button">Exit</button>
