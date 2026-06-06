@@ -9,6 +9,8 @@ import { buildClaudeDeckPrompt, getPastedHtml } from "../../src/shared/ingest.js
 
 const api = window.htmlPresenter;
 let activeStageDocumentUrl = "";
+let activeThumbnailIndex = -1;
+let thumbnailHydrationVersion = 0;
 
 const state = {
   slides: [],
@@ -75,7 +77,7 @@ const elements = {
 };
 
 bindEvents();
-render();
+renderDeck();
 
 window.addEventListener("beforeunload", () => {
   revokeActiveStageDocumentUrl();
@@ -199,7 +201,9 @@ function bindEvents() {
       notifyRendererReady();
     }
   }, 250);
-  void refreshUpdateStatus();
+  window.setTimeout(() => {
+    void refreshUpdateStatus();
+  }, 650);
 }
 
 async function openFile() {
@@ -432,7 +436,7 @@ function loadPayload(payload) {
   }
 
   startElapsedTimer();
-  render();
+  renderDeck();
   focusStage();
 
   if (payload.presentOnOpen) {
@@ -452,9 +456,13 @@ function reloadCurrentPayload() {
   }
 }
 
-function render() {
-  void renderSlide();
+function renderDeck() {
+  renderCurrentSlide();
   renderThumbnails();
+}
+
+function renderCurrentSlide() {
+  void renderSlide();
   renderPresenterPanel();
   renderUpdateStatus();
   updateControls();
@@ -551,18 +559,22 @@ function revokeStageDocumentUrl(sourceUrl) {
 }
 
 function renderThumbnails() {
+  thumbnailHydrationVersion += 1;
   if (state.slides.length === 0) {
+    activeThumbnailIndex = -1;
     elements.thumbnailPanel.innerHTML = '<div class="thumbnail-empty">No slides yet</div>';
     return;
   }
 
   const list = document.createElement("div");
   list.className = "thumbnail-list";
+  const deferredPreviewFrames = [];
 
   state.slides.forEach((slide, index) => {
     const button = document.createElement("button");
     button.className = `thumbnail-button${index === state.index ? " is-active" : ""}`;
     button.type = "button";
+    button.dataset.slideIndex = String(index);
     button.setAttribute("aria-label", `Go to slide ${index + 1}`);
     if (index === state.index) {
       button.setAttribute("aria-current", "true");
@@ -575,8 +587,14 @@ function renderThumbnails() {
     const frame = document.createElement("iframe");
     frame.title = `Slide ${index + 1} preview`;
     frame.tabIndex = -1;
+    frame.loading = "lazy";
     frame.setAttribute("sandbox", "allow-same-origin");
-    frame.srcdoc = slide.html;
+    frame.dataset.previewIndex = String(index);
+    if (index <= 1) {
+      frame.srcdoc = slide.html;
+    } else {
+      deferredPreviewFrames.push(frame);
+    }
     preview.append(frame);
 
     const meta = document.createElement("div");
@@ -598,6 +616,67 @@ function renderThumbnails() {
   });
 
   elements.thumbnailPanel.replaceChildren(list);
+  activeThumbnailIndex = -1;
+  updateActiveThumbnail(state.index);
+  scheduleThumbnailPreviewHydration(deferredPreviewFrames, thumbnailHydrationVersion);
+}
+
+function updateActiveThumbnail(nextIndex = state.index) {
+  if (activeThumbnailIndex === nextIndex && elements.thumbnailPanel.querySelector(".thumbnail-button.is-active")) {
+    return;
+  }
+
+  const previousButton = elements.thumbnailPanel.querySelector(".thumbnail-button.is-active");
+  previousButton?.classList.remove("is-active");
+  previousButton?.removeAttribute("aria-current");
+
+  const nextButton = elements.thumbnailPanel.querySelector(`[data-slide-index="${nextIndex}"]`);
+  if (nextButton) {
+    nextButton.classList.add("is-active");
+    nextButton.setAttribute("aria-current", "true");
+    nextButton.scrollIntoView({ block: "nearest" });
+  }
+
+  activeThumbnailIndex = nextIndex;
+}
+
+function scheduleThumbnailPreviewHydration(frames, version) {
+  const queue = Array.from(frames);
+  if (queue.length === 0) {
+    return;
+  }
+
+  const hydrateNext = (deadline = { timeRemaining: () => 0 }) => {
+    if (version !== thumbnailHydrationVersion) {
+      return;
+    }
+
+    let hydrated = 0;
+    while (queue.length > 0 && (hydrated < 2 || deadline.timeRemaining() > 8)) {
+      const frame = queue.shift();
+      const slideIndex = Number(frame?.dataset?.previewIndex ?? -1);
+      const html = state.slides[slideIndex]?.html;
+      if (frame && html && !frame.srcdoc) {
+        frame.srcdoc = html;
+      }
+      hydrated += 1;
+    }
+
+    if (queue.length > 0) {
+      scheduleIdle(hydrateNext);
+    }
+  };
+
+  scheduleIdle(hydrateNext);
+}
+
+function scheduleIdle(callback) {
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(callback, { timeout: 600 });
+    return;
+  }
+
+  window.setTimeout(() => callback({ timeRemaining: () => 12 }), 16);
 }
 
 function renderPresenterPanel() {
@@ -654,7 +733,8 @@ function goToSlide(nextIndex) {
   }
 
   state.index = boundedIndex;
-  render();
+  renderCurrentSlide();
+  updateActiveThumbnail(boundedIndex);
   focusStage();
 }
 

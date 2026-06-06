@@ -20,6 +20,7 @@ let securityInstalled = false;
 let slideProtocolInstalled = false;
 let rendererReady = false;
 let commandLineOpenPathsQueued = false;
+let updateStatusBroadcastQueued = false;
 let updateService = null;
 const queuedOpenPaths = [];
 const slideDocuments = new Map();
@@ -46,7 +47,6 @@ app.whenReady().then(() => {
   installSlideProtocol();
   installSecurityGuards();
   installIpcHandlers();
-  getUpdateService();
   createMenu();
   createMainWindow();
 
@@ -160,7 +160,7 @@ function installIpcHandlers() {
     rendererReady = true;
     queueCommandLineOpenPaths();
     flushQueuedOpenPaths();
-    sendUpdateStatus(getUpdateService().getStatus());
+    queueInitialUpdateStatusBroadcast();
     return true;
   });
 
@@ -402,6 +402,18 @@ function sendUpdateStatus(status) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send("updates:status", status);
   }
+}
+
+function queueInitialUpdateStatusBroadcast() {
+  if (updateStatusBroadcastQueued) {
+    return;
+  }
+
+  updateStatusBroadcastQueued = true;
+  setTimeout(() => {
+    sendUpdateStatus(getUpdateService().getStatus());
+    updateStatusBroadcastQueued = false;
+  }, 650);
 }
 
 function queueCommandLineOpenPaths() {

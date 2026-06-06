@@ -43,3 +43,37 @@ test("leaves remote and parent-directory script tags untouched", async () => {
     await rm(directory, { force: true, recursive: true });
   }
 });
+
+test("reads multiple local scripts in parallel while preserving document order", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "tada-local-scripts-"));
+  try {
+    const htmlPath = path.join(directory, "deck.html");
+    await writeFile(path.join(directory, "one.js"), "window.one = true;", "utf8");
+    await writeFile(path.join(directory, "two.js"), "window.two = true;", "utf8");
+    await writeFile(path.join(directory, "three.js"), "window.three = true;", "utf8");
+
+    let activeReads = 0;
+    let maxActiveReads = 0;
+    const delayedReadFile = async (filePath, encoding) => {
+      activeReads += 1;
+      maxActiveReads = Math.max(maxActiveReads, activeReads);
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      activeReads -= 1;
+      return readFile(filePath, encoding);
+    };
+
+    const html = [
+      '<script src="./one.js"></script>',
+      '<script src="./two.js"></script>',
+      '<script src="./three.js"></script>',
+    ].join("");
+
+    const result = await inlineLocalScriptTags(html, htmlPath, delayedReadFile);
+
+    assert.ok(maxActiveReads > 1);
+    assert.ok(result.indexOf("window.one") < result.indexOf("window.two"));
+    assert.ok(result.indexOf("window.two") < result.indexOf("window.three"));
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+});
