@@ -3,6 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
+const macEntitlements = await readFile("build/entitlements.mac.plist", "utf8");
 
 describe("production package configuration", () => {
   it("declares installable macOS and Windows build targets", () => {
@@ -33,5 +34,9 @@ describe("production package configuration", () => {
   it("ships platform app icons", async () => {
     await access(packageJson.build.mac.icon);
     await access(packageJson.build.win.icon);
+  });
+
+  it("allows Electron Framework loading in hardened local macOS builds", () => {
+    assert.match(macEntitlements, /com\.apple\.security\.cs\.disable-library-validation/);
   });
 });
