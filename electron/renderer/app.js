@@ -176,10 +176,7 @@ function bindEvents() {
     }
   });
 
-  elements.slideFrame.addEventListener("load", () => {
-    bindFrameNavigation();
-    postSlideIndexToFrame();
-  });
+  elements.slideFrame.addEventListener("load", syncFrameAfterLoad);
 
   api?.onFileOpened?.((payload) => {
     if (payload) {
@@ -822,6 +819,13 @@ function postSlideIndexToFrame() {
     },
     "*",
   );
+}
+
+function syncFrameAfterLoad() {
+  bindFrameNavigation();
+  postSlideIndexToFrame();
+  setTimeout(postSlideIndexToFrame, 0);
+  setTimeout(postSlideIndexToFrame, 120);
 }
 
 function bindFrameNavigation() {

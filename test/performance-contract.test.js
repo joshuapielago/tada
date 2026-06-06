@@ -27,4 +27,17 @@ describe("desktop performance contract", () => {
     assert.doesNotMatch(readyBody, /getUpdateService\(\);/);
     assert.match(mainProcess, /setTimeout\(\(\) => \{\s*sendUpdateStatus\(getUpdateService\(\)\.getStatus\(\)\)/);
   });
+
+  it("reposts the active slide after runtime frame load to survive fast navigation during iframe startup", () => {
+    assert.match(rendererApp, /elements\.slideFrame\.addEventListener\("load", syncFrameAfterLoad\)/);
+    assert.match(rendererApp, /function syncFrameAfterLoad\(\)/);
+
+    const syncStart = rendererApp.indexOf("function syncFrameAfterLoad()");
+    const syncEnd = rendererApp.indexOf("function bindFrameNavigation()", syncStart);
+    const syncBody = rendererApp.slice(syncStart, syncEnd);
+    assert.match(syncBody, /bindFrameNavigation\(\)/);
+    assert.equal(syncBody.match(/postSlideIndexToFrame\(\)/g)?.length ?? 0, 1);
+    assert.match(syncBody, /setTimeout\(postSlideIndexToFrame, 0\)/);
+    assert.match(syncBody, /setTimeout\(postSlideIndexToFrame, 120\)/);
+  });
 });

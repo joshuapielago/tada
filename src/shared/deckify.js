@@ -889,6 +889,16 @@ function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELEC
 }
 
 function extractExistingDeckSlideStrings(html) {
+  if (hasRevealDeckIndicators(html)) {
+    const slides = extractSimpleSelectorHtml(html, "section").map((slideHtml) => ({
+      html: stripScripts(slideHtml),
+      notes: extractDataNotes(slideHtml),
+    }));
+    if (slides.length > 0) {
+      return slides;
+    }
+  }
+
   const patterns = [
     /<section\b(?=[^>]*\bclass=(["'])[^"']*\bslide\b[^"']*\1)([^>]*)>[\s\S]*?<\/section>/gi,
     /<div\b(?=[^>]*\bclass=(["'])[^"']*(?:\bslide\b|\bremark-slide\b|\bswiper-slide\b)[^"']*\1)([^>]*)>[\s\S]*?<\/div>/gi,
@@ -909,9 +919,11 @@ function extractExistingDeckSlideStrings(html) {
 }
 
 function hasExistingDeckIndicators(html) {
+  if (hasRevealDeckIndicators(html)) {
+    return true;
+  }
+
   const tags = extractOpeningTags(html);
-  let hasRevealRoot = false;
-  let hasRevealSlides = false;
 
   for (const tag of tags) {
     const classes = getTagClassTokens(tag);
@@ -924,7 +936,17 @@ function hasExistingDeckIndicators(html) {
     if (classSet.has("notes")) return true;
     if (hasTagAttribute(tag, "data-slide")) return true;
     if (hasTagAttribute(tag, "data-notes")) return true;
+  }
 
+  return false;
+}
+
+function hasRevealDeckIndicators(html) {
+  let hasRevealRoot = false;
+  let hasRevealSlides = false;
+
+  for (const tag of extractOpeningTags(html)) {
+    const classSet = new Set(getTagClassTokens(tag));
     hasRevealRoot ||= classSet.has("reveal");
     hasRevealSlides ||= classSet.has("slides");
   }
@@ -944,6 +966,18 @@ function getTagClassTokens(tag) {
 
 function hasTagAttribute(tag, attribute) {
   return new RegExp(`\\s${escapeRegExp(attribute)}(?:\\s*=|\\s|>)`, "i").test(String(tag ?? ""));
+}
+
+function getTagAttributeValue(tag, attribute) {
+  const match = String(tag ?? "").match(
+    new RegExp(`\\s${escapeRegExp(attribute)}(?:\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+)))?(?=\\s|>)`, "i"),
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return match[1] ?? match[2] ?? match[3] ?? "";
 }
 
 function selectorMatchesSource(html, selector) {
@@ -1005,13 +1039,65 @@ function hasHorizontalRules(html) {
 
 function extractSimpleSelectorHtml(html, selector) {
   if (/^[a-z][\w-]*$/i.test(selector)) {
-    const tag = escapeRegExp(selector);
-    return Array.from(html.matchAll(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, "gi"))).map(
-      (match) => match[0],
+    const tag = selector.toLowerCase();
+    return extractElementsMatchingOpeningTag(html, (_openingTag, tagName) => tagName.toLowerCase() === tag);
+  }
+
+  if (/^\.[\w-]+$/.test(selector)) {
+    const className = selector.slice(1);
+    return extractElementsMatchingOpeningTag(html, (openingTag) => getTagClassTokens(openingTag).includes(className));
+  }
+
+  if (/^#[\w-]+$/.test(selector)) {
+    const id = selector.slice(1);
+    return extractElementsMatchingOpeningTag(html, (openingTag) => getTagAttributeValue(openingTag, "id") === id);
+  }
+
+  const attributeSelector = selector.match(/^\[([\w:-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\]]+)))?\]$/);
+  if (attributeSelector) {
+    const [, attribute, doubleQuotedValue, singleQuotedValue, unquotedValue] = attributeSelector;
+    const expectedValue = doubleQuotedValue ?? singleQuotedValue ?? unquotedValue?.trim();
+    return extractElementsMatchingOpeningTag(html, (openingTag) => {
+      const value = getTagAttributeValue(openingTag, attribute);
+      return expectedValue === undefined ? value !== null : value === expectedValue;
+    });
+  }
+
+  const tagClassMatch = selector.match(/^([a-z][\w-]*)\.([\w-]+)$/i);
+  if (tagClassMatch) {
+    const [, expectedTagName, className] = tagClassMatch;
+    return extractElementsMatchingOpeningTag(
+      html,
+      (openingTag, tagName) =>
+        tagName.toLowerCase() === expectedTagName.toLowerCase() && getTagClassTokens(openingTag).includes(className),
     );
   }
 
   return [];
+}
+
+function extractElementsMatchingOpeningTag(html, predicate) {
+  const source = String(html ?? "");
+  const openingTagPattern = /<([a-z][\w:-]*)(?:\s[^<>]*)?>/gi;
+  const elements = [];
+
+  for (const match of source.matchAll(openingTagPattern)) {
+    const [openingTag, tagName] = match;
+    if (!predicate(openingTag, tagName)) {
+      continue;
+    }
+
+    const closingTagPattern = new RegExp(`</${escapeRegExp(tagName)}>`, "gi");
+    closingTagPattern.lastIndex = match.index + openingTag.length;
+    const closingMatch = closingTagPattern.exec(source);
+    if (!closingMatch) {
+      continue;
+    }
+
+    elements.push(source.slice(match.index, closingMatch.index + closingMatch[0].length));
+  }
+
+  return elements;
 }
 
 function splitDomBySlideComment(document) {
