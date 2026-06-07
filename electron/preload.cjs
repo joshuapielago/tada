@@ -27,6 +27,18 @@ contextBridge.exposeInMainWorld("htmlPresenter", {
     return ipcRenderer.invoke("app:set-fullscreen", value);
   },
 
+  startPresentation(payload) {
+    return ipcRenderer.invoke("presentation:start", payload);
+  },
+
+  setPresentationIndex(index) {
+    return ipcRenderer.invoke("presentation:set-index", index);
+  },
+
+  stopPresentation() {
+    return ipcRenderer.invoke("presentation:stop");
+  },
+
   saveShowHtml(payload) {
     return ipcRenderer.invoke("show:save-html", payload);
   },
@@ -83,5 +95,25 @@ contextBridge.exposeInMainWorld("htmlPresenter", {
     const listener = (_event, status) => callback(status);
     ipcRenderer.on("updates:status", listener);
     return () => ipcRenderer.removeListener("updates:status", listener);
+  },
+
+  onPresentationIntent(callback) {
+    if (typeof callback !== "function") {
+      return () => {};
+    }
+
+    const listener = (_event, intent) => callback(intent);
+    ipcRenderer.on("presentation:intent", listener);
+    return () => ipcRenderer.removeListener("presentation:intent", listener);
+  },
+
+  onPresentationStopped(callback) {
+    if (typeof callback !== "function") {
+      return () => {};
+    }
+
+    const listener = () => callback();
+    ipcRenderer.on("presentation:stopped", listener);
+    return () => ipcRenderer.removeListener("presentation:stopped", listener);
   },
 });

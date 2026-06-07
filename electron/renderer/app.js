@@ -5,6 +5,7 @@ import {
   normalizeSelector,
   normalizeSourceUrl,
 } from "../../src/shared/deckify.js";
+import { createHtmlDeckSession } from "../../src/shared/deck-session.js";
 import { buildClaudeDeckPrompt, getPastedHtml } from "../../src/shared/ingest.js";
 
 const api = window.htmlPresenter;
@@ -21,6 +22,7 @@ const state = {
   panelOpen: true,
   panelTab: "thumbnails",
   isPresenting: false,
+  deckSession: null,
   startedAt: null,
   elapsedTimer: null,
   deckVersion: 0,
@@ -192,6 +194,16 @@ function bindEvents() {
     applyUpdateStatus(status);
   });
 
+  api?.onPresentationIntent?.((intent) => {
+    navigateByIntent(intent);
+  });
+
+  api?.onPresentationStopped?.(() => {
+    if (state.isPresenting) {
+      setPresentationMode(false);
+    }
+  });
+
   notifyRendererReady();
   window.setTimeout(() => {
     if (state.slides.length === 0 && !state.sourceUrl) {
@@ -299,12 +311,28 @@ async function enterPresentationMode() {
     return;
   }
 
+  if (api?.startPresentation) {
+    try {
+      await api.startPresentation({
+        session: buildPresentationSession(),
+        index: state.index,
+      });
+      setPresentationMode(true);
+      setPanelTab("presenter");
+      focusStage();
+      return;
+    } catch (error) {
+      showToast(error.message || "Could not start presentation.");
+    }
+  }
+
   setPresentationMode(true);
   try {
     await api?.setFullscreen?.(true);
   } catch {
     showToast("Fullscreen is not available.");
   }
+
   focusStage();
 }
 
@@ -315,6 +343,7 @@ async function exitPresentationMode() {
 
   setPresentationMode(false);
   try {
+    await api?.stopPresentation?.();
     await api?.setFullscreen?.(false);
   } catch {
     showToast("Could not exit fullscreen.");
@@ -401,6 +430,11 @@ async function handleUpdateButtonClick() {
 }
 
 function loadPayload(payload) {
+  if (payload?.session) {
+    loadSessionPayload(payload);
+    return;
+  }
+
   const html = String(payload?.html ?? "");
   if (!html.trim()) {
     throw new Error("That document is empty.");
@@ -412,10 +446,20 @@ function loadPayload(payload) {
     sourceUrl: payload.sourceUrl ?? "",
   });
 
-  state.slides = parsed.slides;
+  const sourceLabel = payload.sourceLabel || sourceLabelFromUrl(payload.sourceUrl) || "Loaded deck";
+  const deckSession = createHtmlDeckSession({
+    title: sourceLabel,
+    sourceLabel,
+    sourceUrl: payload.sourceUrl ?? "",
+    mode: parsed.mode === "selector" ? selector : parsed.mode,
+    slides: parsed.slides,
+  });
+
+  state.deckSession = deckSession;
+  state.slides = deckSession.slides;
   state.index = 0;
-  state.mode = parsed.mode === "selector" ? selector : parsed.mode;
-  state.sourceLabel = payload.sourceLabel || sourceLabelFromUrl(payload.sourceUrl) || "Loaded deck";
+  state.mode = deckSession.mode;
+  state.sourceLabel = sourceLabel;
   state.sourceUrl = payload.sourceUrl ?? "";
   state.lastPayload = payload;
   state.startedAt = Date.now();
@@ -425,6 +469,44 @@ function loadPayload(payload) {
 
   if (state.isPresenting) {
     setPresentationMode(false);
+    void api?.stopPresentation?.();
+    void api?.setFullscreen?.(false);
+  }
+
+  if (state.sourceUrl) {
+    elements.sourceInput.value = state.sourceUrl;
+  }
+
+  startElapsedTimer();
+  renderDeck();
+  focusStage();
+
+  if (payload.presentOnOpen) {
+    void enterPresentationMode();
+  }
+}
+
+function loadSessionPayload(payload) {
+  const session = normalizeDeckSession(payload.session);
+  if (session.slides.length === 0) {
+    throw new Error("That source did not produce any slides.");
+  }
+
+  state.deckSession = session;
+  state.slides = session.slides;
+  state.index = Math.max(0, Math.min(Number(session.currentIndex ?? 0) || 0, session.slides.length - 1));
+  state.mode = session.mode || session.renderMode || payload.sourceType || "deck";
+  state.sourceLabel = payload.sourceLabel || session.sourceLabel || session.title || "Loaded deck";
+  state.sourceUrl = payload.sourceUrl ?? session.sourceUrl ?? "";
+  state.lastPayload = payload;
+  state.startedAt = Date.now();
+  state.deckVersion += 1;
+  elements.slideFrame.removeAttribute("data-deck-version");
+  elements.slideFrame.removeAttribute("data-runtime-frame");
+
+  if (state.isPresenting) {
+    setPresentationMode(false);
+    void api?.stopPresentation?.();
     void api?.setFullscreen?.(false);
   }
 
@@ -504,7 +586,7 @@ async function renderSlide() {
   elements.slideFrame.dataset.deckVersion = `${state.deckVersion}:${state.index}`;
   elements.slideFrame.dataset.runtimeFrame = "false";
   try {
-    await setStageFrameDocument(slide.html, requestVersion);
+    await setStageFrameDocument(getSlideDisplayHtml(slide), requestVersion);
   } catch (error) {
     showToast(error.message);
   }
@@ -588,7 +670,7 @@ function renderThumbnails() {
     frame.setAttribute("sandbox", "allow-same-origin");
     frame.dataset.previewIndex = String(index);
     if (index <= 1) {
-      frame.srcdoc = slide.html;
+      frame.srcdoc = getSlideDisplayHtml(slide);
     } else {
       deferredPreviewFrames.push(frame);
     }
@@ -652,7 +734,7 @@ function scheduleThumbnailPreviewHydration(frames, version) {
     while (queue.length > 0 && (hydrated < 2 || deadline.timeRemaining() > 8)) {
       const frame = queue.shift();
       const slideIndex = Number(frame?.dataset?.previewIndex ?? -1);
-      const html = state.slides[slideIndex]?.html;
+      const html = getSlideDisplayHtml(state.slides[slideIndex]);
       if (frame && html && !frame.srcdoc) {
         frame.srcdoc = html;
       }
@@ -732,6 +814,9 @@ function goToSlide(nextIndex) {
   state.index = boundedIndex;
   renderCurrentSlide();
   updateActiveThumbnail(boundedIndex);
+  if (state.isPresenting) {
+    void api?.setPresentationIndex?.(boundedIndex);
+  }
   focusStage();
 }
 
@@ -871,13 +956,74 @@ function applyFitMode(mode) {
 
 function setPresentationMode(isPresenting) {
   state.isPresenting = isPresenting;
-  document.body.classList.toggle("presenting", isPresenting);
-  elements.exitPresentationButton.hidden = !isPresenting;
+  const usingAudienceWindow = Boolean(api?.startPresentation);
+  document.body.classList.toggle("presenting", isPresenting && !usingAudienceWindow);
+  elements.exitPresentationButton.hidden = !isPresenting || usingAudienceWindow;
   elements.presentationArea.setAttribute(
     "aria-label",
     isPresenting ? "Presentation mode" : "Presentation stage",
   );
   updateControls();
+}
+
+function buildPresentationSession() {
+  const session = state.deckSession || createHtmlDeckSession({
+    title: state.sourceLabel || "TaDa! deck",
+    sourceLabel: state.sourceLabel || "TaDa! deck",
+    sourceUrl: state.sourceUrl,
+    mode: state.mode,
+    slides: state.slides,
+  });
+
+  return {
+    ...session,
+    currentIndex: state.index,
+    slides: session.slides.map((slide) => ({ ...slide })),
+  };
+}
+
+function normalizeDeckSession(session) {
+  return {
+    ...session,
+    slides: Array.isArray(session.slides) ? session.slides.map((slide, index) => ({
+      id: slide.id || `${session.id || "session"}-slide-${index + 1}`,
+      title: slide.title || `Slide ${index + 1}`,
+      notes: slide.notes || "",
+      ...slide,
+    })) : [],
+  };
+}
+
+function getSlideDisplayHtml(slide) {
+  if (!slide) {
+    return "";
+  }
+
+  if (slide.html) {
+    return slide.html;
+  }
+
+  if (slide.type === "remote" && slide.url) {
+    return buildRemotePlaceholderDocument(slide);
+  }
+
+  if (slide.type === "image" && slide.src) {
+    return buildImagePlaceholderDocument(slide);
+  }
+
+  return "";
+}
+
+function buildRemotePlaceholderDocument(slide) {
+  const title = escapeHtml(slide.title || "Remote presentation");
+  const url = escapeHtml(slide.url || "");
+  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{width:100%;height:100%;margin:0;background:#fff;color:#25162f;font-family:system-ui,sans-serif}body{display:grid;place-items:center;text-align:center}.box{max-width:720px;padding:48px}strong{display:block;font-size:44px;margin-bottom:14px}p{font-size:20px;color:#716676;overflow-wrap:anywhere}</style></head><body><div class="box"><strong>${title}</strong><p>${url}</p></div></body></html>`;
+}
+
+function buildImagePlaceholderDocument(slide) {
+  const title = escapeHtml(slide.title || "Slide");
+  const src = escapeAttribute(slide.src || "");
+  return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{width:100%;height:100%;margin:0;background:#050505;overflow:hidden}body{display:grid;place-items:center}img{display:block;width:100vw;height:100vh;object-fit:contain}</style></head><body><img src="${src}" alt="${title}"></body></html>`;
 }
 
 function startElapsedTimer() {
@@ -982,4 +1128,16 @@ function sourceLabelFromUrl(value) {
   } catch {
     return value;
   }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/'/g, "&#39;");
 }

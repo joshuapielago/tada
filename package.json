@@ -56,6 +56,15 @@
         "name": "HTML Presentation",
         "description": "Open HTML files in TaDa!",
         "role": "Viewer"
+      },
+      {
+        "ext": [
+          "pptx",
+          "ppt"
+        ],
+        "name": "PowerPoint Presentation",
+        "description": "Open PowerPoint files in TaDa!",
+        "role": "Viewer"
       }
     ],
     "publish": {

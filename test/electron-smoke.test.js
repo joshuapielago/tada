@@ -100,6 +100,33 @@ describe("Electron desktop smoke and load coverage", () => {
     }
   }, { timeout: 30000 });
 
+  it("starts a chrome-free audience window and keeps it synced with presenter navigation", async () => {
+    const app = await launchTadaWithDeck(sectionDeck({ count: 5 }), "audience-smoke.html");
+
+    try {
+      const page = await connectToRenderer(app.port);
+      await evalValue(page, `document.querySelector("#presentButton")?.click()`);
+      const audience = await connectToAudience(app.port);
+      await waitFor(async () => (await readAudienceState(audience)).counter === "1 / 5", { timeoutMs: 12000 });
+
+      assert.deepEqual(await readAudienceState(audience), {
+        hasToolbar: false,
+        hasSidePanel: false,
+        frameVisible: true,
+        counter: "1 / 5",
+      });
+
+      await clickThumbnail(page, 3);
+      await waitFor(async () => (await readPageState(page)).position === "4 / 5");
+      await waitFor(async () => (await readAudienceState(audience)).counter === "4 / 5", { timeoutMs: 12000 });
+
+      await page.close();
+      await audience.close();
+    } finally {
+      await app.close();
+    }
+  }, { timeout: 45000 });
+
   it("can load and navigate a large client deck without stale stage content", async () => {
     const app = await launchTadaWithDeck(sectionDeck({ count: 80, includeScripts: false }), "large-client.html");
 
@@ -242,6 +269,18 @@ async function connectToRenderer(port) {
   return client;
 }
 
+async function connectToAudience(port) {
+  const target = await waitForTarget(
+    port,
+    (candidate) => candidate.type === "page" && candidate.url.includes("/electron/audience.html"),
+    { timeoutMs: 15000 },
+  );
+  const client = await connect(target.webSocketDebuggerUrl);
+  await client.cmd("Runtime.enable");
+  await client.cmd("Page.enable");
+  return client;
+}
+
 async function readPageState(client) {
   return evalValue(
     client,
@@ -257,6 +296,18 @@ async function readPageState(client) {
 
 async function clickThumbnail(client, index) {
   await evalValue(client, `document.querySelector('[data-slide-index="${index}"]')?.click()`);
+}
+
+async function readAudienceState(client) {
+  return evalValue(
+    client,
+    `(() => ({
+      hasToolbar: Boolean(document.querySelector(".toolbar")),
+      hasSidePanel: Boolean(document.querySelector(".side-panel")),
+      frameVisible: !document.querySelector("#slideFrame")?.hidden,
+      counter: document.querySelector("#counter")?.textContent?.trim(),
+    }))()`,
+  );
 }
 
 async function readFrameState(port) {

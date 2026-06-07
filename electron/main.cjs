@@ -1,16 +1,21 @@
-const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, protocol, shell } = require("electron");
-const { readFile, writeFile } = require("node:fs/promises");
+const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, protocol, screen, shell } = require("electron");
+const { mkdtemp, readFile, rm, writeFile } = require("node:fs/promises");
 const { randomUUID } = require("node:crypto");
+const os = require("node:os");
 const path = require("node:path");
 const { fileURLToPath, pathToFileURL } = require("node:url");
 const { collectCommandLineOpenRequests } = require("./command-line.cjs");
 const { inlineLocalScriptTags } = require("../src/shared/local-scripts.cjs");
+const { convertPowerPointFile, isPowerPointFile } = require("../src/shared/powerpoint-adapter.cjs");
 const { createUpdateService } = require("./updater.cjs");
+const { createPresenterService } = require("./presenter-service.cjs");
 const packageConfig = require("../package.json");
 
 const isMac = process.platform === "darwin";
-const htmlFilters = [
+const sourceFilters = [
+  { name: "Presentation Sources", extensions: ["html", "htm", "pptx", "ppt"] },
   { name: "HTML Files", extensions: ["html", "htm"] },
+  { name: "PowerPoint Files", extensions: ["pptx", "ppt"] },
   { name: "All Files", extensions: ["*"] },
 ];
 
@@ -22,8 +27,11 @@ let rendererReady = false;
 let commandLineOpenPathsQueued = false;
 let updateStatusBroadcastQueued = false;
 let updateService = null;
+let presenterService = null;
 const queuedOpenPaths = [];
 const slideDocuments = new Map();
+const websiteCaptureWebContentsIds = new Set();
+const audienceWebContentsIds = new Set();
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -63,6 +71,10 @@ app.on("window-all-closed", () => {
   }
 });
 
+async function importSharedModule(modulePath) {
+  return import(modulePath);
+}
+
 function createMainWindow() {
   const rendererEntryPath = path.join(__dirname, "renderer", "index.html");
   rendererReady = false;
@@ -92,6 +104,7 @@ function createMainWindow() {
   });
 
   mainWindow.on("closed", () => {
+    presenterService?.stopPresentation?.({ notifyAudience: true });
     mainWindow = null;
     rendererReady = false;
     slideDocuments.clear();
@@ -114,7 +127,7 @@ function installIpcHandlers() {
   });
 
   ipcMain.handle("file:read-dropped", async (_event, filePath) => {
-    return readHtmlFile(filePath);
+    return readSourceFile(filePath);
   });
 
   ipcMain.handle("clipboard:write-text", (_event, text) => {
@@ -142,6 +155,33 @@ function installIpcHandlers() {
     const nextValue = Boolean(value);
     window.setFullScreen(nextValue);
     return nextValue;
+  });
+
+  ipcMain.handle("presentation:start", async (_event, payload) => {
+    return getPresenterService().startPresentation(payload);
+  });
+
+  ipcMain.handle("presentation:set-index", (_event, index) => {
+    return getPresenterService().setPresentationIndex(index);
+  });
+
+  ipcMain.handle("presentation:stop", () => {
+    return getPresenterService().stopPresentation();
+  });
+
+  ipcMain.on("presentation:intent", (_event, intent) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("presentation:intent", String(intent ?? "none"));
+      return;
+    }
+
+    if (intent === "exit") {
+      getPresenterService().stopPresentation();
+    }
+  });
+
+  ipcMain.on("presentation:ready", () => {
+    getPresenterService().sendCurrentSession();
   });
 
   ipcMain.handle("show:save-html", async (event, payload) => {
@@ -272,6 +312,14 @@ function installSecurityGuards() {
     });
 
     contents.on("will-navigate", (event, navigationUrl) => {
+      if (websiteCaptureWebContentsIds.has(contents.id) && isAllowedCaptureNavigation(navigationUrl)) {
+        return;
+      }
+
+      if (audienceWebContentsIds.has(contents.id) && isAllowedAudienceNavigation(navigationUrl)) {
+        return;
+      }
+
       if (!isAllowedAppNavigation(navigationUrl)) {
         event.preventDefault();
       }
@@ -350,16 +398,66 @@ function isAllowedAppNavigation(navigationUrl) {
       return false;
     }
 
-    return fileURLToPath(parsedUrl) === path.join(__dirname, "renderer", "index.html");
+    const allowedAppFiles = new Set([
+      path.join(__dirname, "renderer", "index.html"),
+      path.join(__dirname, "audience.html"),
+    ]);
+    return allowedAppFiles.has(fileURLToPath(parsedUrl));
   } catch {
     return false;
   }
+}
+
+function getPresenterService() {
+  if (!presenterService) {
+    presenterService = createPresenterService({
+      BrowserWindow,
+      screen,
+      audiencePath: path.join(__dirname, "audience.html"),
+      preloadPath: path.join(__dirname, "audience-preload.cjs"),
+      onAudienceWindowCreated: (window) => {
+        audienceWebContentsIds.add(window.webContents.id);
+        window.once("closed", () => {
+          audienceWebContentsIds.delete(window.webContents.id);
+        });
+      },
+      onStopped: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("presentation:stopped");
+        }
+      },
+    });
+  }
+
+  return presenterService;
 }
 
 function isAllowedExternalUrl(value) {
   try {
     const parsedUrl = new URL(value);
     return ["https:", "http:", "mailto:"].includes(parsedUrl.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedCaptureNavigation(value) {
+  try {
+    const parsedUrl = new URL(value);
+    return ["http:", "https:"].includes(parsedUrl.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedAudienceNavigation(value) {
+  try {
+    const parsedUrl = new URL(value);
+    return parsedUrl.protocol === "https:" && (
+      parsedUrl.hostname === "docs.google.com" ||
+      parsedUrl.hostname === "accounts.google.com" ||
+      parsedUrl.hostname.endsWith(".google.com")
+    );
   } catch {
     return false;
   }
@@ -440,16 +538,16 @@ async function chooseFileFromMenu() {
 async function showOpenFileDialog() {
   const owner = BrowserWindow.getFocusedWindow() ?? mainWindow ?? undefined;
   const result = await dialog.showOpenDialog(owner, {
-    title: "Open HTML Presentation",
+    title: "Open Presentation Source",
     properties: ["openFile"],
-    filters: htmlFilters,
+    filters: sourceFilters,
   });
 
   if (result.canceled || result.filePaths.length === 0) {
     return null;
   }
 
-  return readHtmlFile(result.filePaths[0]);
+  return readSourceFile(result.filePaths[0]);
 }
 
 async function saveShowHtml(event, payload) {
@@ -493,7 +591,7 @@ async function openPathInWindow(request) {
 
   try {
     sendFilePayload({
-      ...(await readHtmlFile(filePath)),
+      ...(await readSourceFile(filePath)),
       presentOnOpen,
     });
   } catch (error) {
@@ -539,14 +637,56 @@ async function loadSource(source) {
   }
 
   if (url.protocol === "file:") {
-    return readHtmlFile(fileURLToPath(url));
+    return readSourceFile(fileURLToPath(url));
   }
 
   if (url.protocol === "http:" || url.protocol === "https:") {
-    return fetchHtmlUrl(url.href);
+    return loadRemoteSource(url.href);
   }
 
   throw new Error("That source cannot be loaded.");
+}
+
+async function readSourceFile(filePath) {
+  const value = String(filePath ?? "").trim();
+  if (!value) {
+    throw new Error("Choose a presentation source.");
+  }
+
+  const extension = path.extname(value).toLowerCase();
+  if ([".html", ".htm"].includes(extension)) {
+    return readHtmlFile(value);
+  }
+
+  if (isPowerPointFile(value)) {
+    return loadPowerPointFile(value);
+  }
+
+  throw new Error("Choose an HTML or PowerPoint file.");
+}
+
+async function loadPowerPointFile(filePath) {
+  const result = await convertPowerPointFile(filePath);
+  if (!result.ok) {
+    throw new Error(result.message);
+  }
+
+  const { createImageDeckSession } = await importSharedModule("../src/shared/deck-session.js");
+  const sourceLabel = path.basename(filePath);
+  return {
+    session: createImageDeckSession({
+      title: sourceLabel,
+      sourceType: "powerpoint",
+      sourceLabel,
+      sourceUrl: pathToFileURL(filePath).href,
+      mode: "powerpoint",
+      slides: result.slides,
+    }),
+    sourceType: "powerpoint",
+    sourceUrl: pathToFileURL(filePath).href,
+    sourceLabel,
+    filePath,
+  };
 }
 
 async function readHtmlFile(filePath) {
@@ -573,6 +713,84 @@ async function readHtmlFile(filePath) {
     sourceLabel: path.basename(value),
     filePath: value,
   };
+}
+
+async function loadRemoteSource(sourceUrl) {
+  const { classifySourceInput } = await importSharedModule("../src/shared/source-classifier.js");
+  const classification = classifySourceInput(sourceUrl);
+
+  if (classification.kind === "google-slides") {
+    return loadGoogleSlidesSource(classification.sourceUrl);
+  }
+
+  if (classification.kind === "website") {
+    return captureWebsiteDeck(classification.sourceUrl, classification.sourceLabel);
+  }
+
+  return fetchHtmlUrl(sourceUrl);
+}
+
+async function loadGoogleSlidesSource(sourceUrl) {
+  const { createGoogleSlidesRemoteSession, normalizeGoogleSlidesUrl } = await importSharedModule("../src/shared/google-slides.js");
+  const { createImageDeckSession } = await importSharedModule("../src/shared/deck-session.js");
+  const normalized = normalizeGoogleSlidesUrl(sourceUrl);
+  const exported = await tryLoadExportedGoogleSlides(normalized);
+  if (exported?.ok) {
+    return {
+      session: createImageDeckSession({
+        title: "Google Slides",
+        sourceType: "google-slides",
+        sourceLabel: "Google Slides",
+        sourceUrl: normalized.presentUrl,
+        mode: "google slides",
+        slides: exported.slides,
+      }),
+      sourceType: "google-slides",
+      sourceUrl: normalized.presentUrl,
+      sourceLabel: "Google Slides",
+    };
+  }
+
+  return {
+    session: createGoogleSlidesRemoteSession(sourceUrl),
+    sourceType: "google-slides",
+    sourceUrl: normalized.presentUrl,
+    sourceLabel: "Google Slides",
+  };
+}
+
+async function tryLoadExportedGoogleSlides(normalized) {
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), 12000);
+  const workDir = await mkdtemp(path.join(os.tmpdir(), "tada-google-slides-"));
+
+  try {
+    const response = await fetch(normalized.exportPptxUrl, {
+      headers: {
+        Accept: "application/vnd.openxmlformats-officedocument.presentationml.presentation,*/*;q=0.5",
+        "User-Agent": "tada/0.1",
+      },
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      return { ok: false };
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (/text\/html/i.test(contentType)) {
+      return { ok: false };
+    }
+
+    const filePath = path.join(workDir, `${normalized.id}.pptx`);
+    await writeFile(filePath, Buffer.from(await response.arrayBuffer()));
+    return convertPowerPointFile(filePath);
+  } catch {
+    return { ok: false };
+  } finally {
+    clearTimeout(timeout);
+    await rm(workDir, { force: true, recursive: true });
+  }
 }
 
 async function fetchHtmlUrl(sourceUrl) {
@@ -615,6 +833,156 @@ async function fetchHtmlUrl(sourceUrl) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function captureWebsiteDeck(sourceUrl, sourceLabel = sourceLabelFromUrl(sourceUrl)) {
+  const captureWindow = new BrowserWindow({
+    width: 1440,
+    height: 900,
+    show: false,
+    paintWhenInitiallyHidden: true,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  websiteCaptureWebContentsIds.add(captureWindow.webContents.id);
+
+  try {
+    await loadUrlWithTimeout(captureWindow, sourceUrl, 18000);
+    const pageSnapshot = await captureWindow.webContents.executeJavaScript(
+      `(${collectWebsiteSnapshot.toString()})()`,
+      true,
+    );
+    const { createWebsiteCapturePlan } = await importSharedModule("../src/shared/website-sectioner.js");
+    const { createImageDeckSession } = await importSharedModule("../src/shared/deck-session.js");
+    const capturePlan = createWebsiteCapturePlan(pageSnapshot).slice(0, 24);
+
+    if (capturePlan.length === 0) {
+      throw new Error("TaDa! could not find presentation sections on that website.");
+    }
+
+    const viewport = pageSnapshot.viewport ?? { width: 1440, height: 900 };
+    const slides = [];
+    for (const section of capturePlan) {
+      await captureWindow.webContents.executeJavaScript(
+        `window.scrollTo(0, ${Math.max(0, Math.round(section.y))}); new Promise((resolve) => setTimeout(resolve, 90));`,
+        true,
+      );
+      const image = await captureWindow.webContents.capturePage({
+        x: 0,
+        y: 0,
+        width: Math.round(viewport.width),
+        height: Math.round(Math.min(viewport.height, section.height || viewport.height)),
+      });
+      slides.push({
+        src: image.toDataURL(),
+        title: section.title,
+        width: Math.round(viewport.width),
+        height: Math.round(Math.min(viewport.height, section.height || viewport.height)),
+      });
+    }
+
+    return {
+      session: createImageDeckSession({
+        title: sourceLabel,
+        sourceType: "website",
+        sourceLabel,
+        sourceUrl,
+        mode: "website capture",
+        slides,
+      }),
+      sourceType: "website",
+      sourceUrl,
+      sourceLabel,
+    };
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Capturing that website took too long.");
+    }
+    throw error;
+  } finally {
+    websiteCaptureWebContentsIds.delete(captureWindow.webContents.id);
+    if (!captureWindow.isDestroyed()) {
+      captureWindow.close();
+    }
+  }
+}
+
+async function loadUrlWithTimeout(window, sourceUrl, timeoutMs) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("Capturing that website took too long.")), timeoutMs);
+  });
+
+  try {
+    await Promise.race([
+      window.loadURL(sourceUrl, {
+        userAgent: "TaDa/0.1 website-capture",
+      }),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function collectWebsiteSnapshot() {
+  const viewport = {
+    width: Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1440),
+    height: Math.max(1, window.innerHeight || document.documentElement.clientHeight || 900),
+  };
+  const documentHeight = Math.max(
+    viewport.height,
+    document.documentElement.scrollHeight,
+    document.body?.scrollHeight ?? 0,
+  );
+  const selectors = [
+    "main",
+    "section",
+    "article",
+    "header",
+    "[role='main']",
+    "[role='region']",
+    "[role='article']",
+    "h1",
+    "h2",
+    ".hero",
+    ".pricing",
+    ".feature",
+    ".features",
+    ".card",
+  ];
+  const nodes = Array.from(document.querySelectorAll(selectors.join(","))).slice(0, 220);
+
+  return {
+    pageTitle: document.title || location.hostname,
+    viewport,
+    documentHeight,
+    elements: nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      const style = window.getComputedStyle(node);
+      return {
+        tagName: node.tagName.toLowerCase(),
+        text: (node.innerText || node.textContent || "").trim().slice(0, 500),
+        className: node.className ? String(node.className) : "",
+        id: node.id || "",
+        role: node.getAttribute("role") || "",
+        style: {
+          display: style.display,
+          visibility: style.visibility,
+          position: style.position,
+        },
+        rect: {
+          x: rect.x + window.scrollX,
+          y: rect.y + window.scrollY,
+          width: rect.width,
+          height: rect.height,
+        },
+      };
+    }),
+  };
 }
 
 function looksLikeHtml(contentType, text) {
