@@ -146,7 +146,6 @@ export function buildSlideDocument({ headHtml = "", bodyAttributes = "", content
       .deckify-visible.active,
       .deckify-visible.current,
       .deckify-visible.present {
-        display: flex !important;
         opacity: 1 !important;
         visibility: visible !important;
         transform: none !important;
@@ -464,6 +463,7 @@ function extractSlidesWithDom(html, { selector, sourceUrl }) {
             index,
             sourceUrl,
             slideSelectors: runtimeSlideSelectors,
+            hideInactiveSlides: true,
           })
         : undefined,
       notes: extractNodeNotes(node),
@@ -549,6 +549,7 @@ function extractSlidesWithStrings(html, { selector, sourceUrl }) {
             index,
             sourceUrl,
             slideSelectors: runtimeSlideSelectors,
+            hideInactiveSlides: true,
           })
         : undefined,
       notes: extractDataNotes(content),
@@ -615,13 +616,14 @@ function buildExistingDeckRuntimeDocument({ html, index, sourceUrl }) {
     index,
     sourceUrl,
     slideSelectors: EXISTING_DECK_SELECTORS,
+    hideInactiveSlides: false,
   });
 }
 
-function buildRuntimeDocument({ html, index, sourceUrl, slideSelectors }) {
+function buildRuntimeDocument({ html, index, sourceUrl, slideSelectors, hideInactiveSlides = false }) {
   let documentHtml = sourceUrl ? injectBaseElement(html, sourceUrl) : String(html ?? "");
   documentHtml = injectRuntimeStyle(documentHtml);
-  return injectRuntimeScript(documentHtml, index, { slideSelectors });
+  return injectRuntimeScript(documentHtml, index, { slideSelectors, hideInactiveSlides });
 }
 
 function injectRuntimeStyle(html) {
@@ -648,12 +650,14 @@ function injectRuntimeStyle(html) {
   return `${style}${html}`;
 }
 
-function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELECTORS } = {}) {
+function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELECTORS, hideInactiveSlides = false } = {}) {
   const serializedSlideSelectors = JSON.stringify(Array.isArray(slideSelectors) ? slideSelectors : EXISTING_DECK_SELECTORS);
+  const serializedHideInactiveSlides = JSON.stringify(Boolean(hideInactiveSlides));
   const script = `<script data-tada-runtime-slide="${index}">
 (() => {
   const targetIndex = ${index};
   const slideSelectors = ${serializedSlideSelectors};
+  const hideInactiveSlides = ${serializedHideInactiveSlides};
   let restoreTransitionTimer = 0;
   let forwardingNativeNavigation = false;
 
@@ -749,12 +753,20 @@ function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELEC
       slide.setAttribute("aria-hidden", active ? "false" : "true");
       slide.style.setProperty("transition", "none", "important");
       if (active) {
-        slide.style.setProperty("display", "flex", "important");
+        slide.style.removeProperty("display");
         slide.style.setProperty("opacity", "1", "important");
         slide.style.setProperty("visibility", "visible", "important");
         slide.style.setProperty("transform", "none", "important");
         slide.style.setProperty("z-index", "2", "important");
       } else {
+        if (hideInactiveSlides) {
+          slide.style.setProperty("display", "none", "important");
+          slide.style.setProperty("opacity", "0", "important");
+          slide.style.setProperty("visibility", "hidden", "important");
+          slide.style.removeProperty("transform");
+          slide.style.removeProperty("z-index");
+          return;
+        }
         slide.style.removeProperty("display");
         slide.style.removeProperty("opacity");
         slide.style.removeProperty("visibility");
@@ -774,7 +786,7 @@ function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELEC
     const slides = getSlides();
     const activeIndex = clampSlideIndex(index, slides);
     if (activeIndex < 0) return;
-    if (!options.force && dispatchNativeNavigation(activeIndex, slides)) return;
+    if (!hideInactiveSlides && !options.force && dispatchNativeNavigation(activeIndex, slides)) return;
     forceActiveSlide(activeIndex, slides);
   };
 
@@ -876,6 +888,16 @@ function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELEC
 }
 
 function extractExistingDeckSlideStrings(html) {
+  if (hasRevealDeckIndicators(html)) {
+    const slides = extractSimpleSelectorHtml(html, "section").map((slideHtml) => ({
+      html: stripScripts(slideHtml),
+      notes: extractDataNotes(slideHtml),
+    }));
+    if (slides.length > 0) {
+      return slides;
+    }
+  }
+
   const patterns = [
     /<section\b(?=[^>]*\bclass=(["'])[^"']*\bslide\b[^"']*\1)([^>]*)>[\s\S]*?<\/section>/gi,
     /<div\b(?=[^>]*\bclass=(["'])[^"']*(?:\bslide\b|\bremark-slide\b|\bswiper-slide\b)[^"']*\1)([^>]*)>[\s\S]*?<\/div>/gi,
@@ -896,18 +918,65 @@ function extractExistingDeckSlideStrings(html) {
 }
 
 function hasExistingDeckIndicators(html) {
+  if (hasRevealDeckIndicators(html)) {
+    return true;
+  }
+
+  const tags = extractOpeningTags(html);
+
+  for (const tag of tags) {
+    const classes = getTagClassTokens(tag);
+    const classSet = new Set(classes);
+
+    if (classSet.has("deck")) return true;
+    if (classSet.has("slide") && classSet.has("active")) return true;
+    if (classSet.has("remark-slide")) return true;
+    if (classSet.has("swiper-slide")) return true;
+    if (classSet.has("notes")) return true;
+    if (hasTagAttribute(tag, "data-slide")) return true;
+    if (hasTagAttribute(tag, "data-notes")) return true;
+  }
+
+  return false;
+}
+
+function hasRevealDeckIndicators(html) {
+  let hasRevealRoot = false;
+  let hasRevealSlides = false;
+
+  for (const tag of extractOpeningTags(html)) {
+    const classSet = new Set(getTagClassTokens(tag));
+    hasRevealRoot ||= classSet.has("reveal");
+    hasRevealSlides ||= classSet.has("slides");
+  }
+
+  return hasRevealRoot && hasRevealSlides;
+}
+
+function extractOpeningTags(html) {
   const source = String(html ?? "");
-  return (
-    /\bclass=(["'])[^"']*\bdeck\b[^"']*\1/i.test(source) ||
-    /\bclass=(["'])[^"']*\bslide\b[^"']*\bactive\b[^"']*\1/i.test(source) ||
-    /\bclass=(["'])[^"']*\bactive\b[^"']*\bslide\b[^"']*\1/i.test(source) ||
-    /\bclass=(["'])[^"']*\breveal\b[^"']*\1[\s\S]*\bclass=(["'])[^"']*\bslides\b[^"']*\2/i.test(source) ||
-    /\bclass=(["'])[^"']*\bremark-slide\b[^"']*\1/i.test(source) ||
-    /\bclass=(["'])[^"']*\bswiper-slide\b[^"']*\1/i.test(source) ||
-    /\bdata-slide\b/i.test(source) ||
-    /\bdata-notes=/i.test(source) ||
-    /\bclass=(["'])[^"']*\bnotes\b[^"']*\1/i.test(source)
+  return Array.from(source.matchAll(/<([a-z][\w:-]*)(?:\s[^<>]*)?>/gi), (match) => match[0]);
+}
+
+function getTagClassTokens(tag) {
+  const classMatch = String(tag ?? "").match(/\sclass\s*=\s*(["'])(.*?)\1/i);
+  return classMatch ? classMatch[2].split(/\s+/).filter(Boolean) : [];
+}
+
+function hasTagAttribute(tag, attribute) {
+  return new RegExp(`\\s${escapeRegExp(attribute)}(?:\\s*=|\\s|>)`, "i").test(String(tag ?? ""));
+}
+
+function getTagAttributeValue(tag, attribute) {
+  const match = String(tag ?? "").match(
+    new RegExp(`\\s${escapeRegExp(attribute)}(?:\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+)))?(?=\\s|>)`, "i"),
   );
+
+  if (!match) {
+    return null;
+  }
+
+  return match[1] ?? match[2] ?? match[3] ?? "";
 }
 
 function selectorMatchesSource(html, selector) {
@@ -969,13 +1038,65 @@ function hasHorizontalRules(html) {
 
 function extractSimpleSelectorHtml(html, selector) {
   if (/^[a-z][\w-]*$/i.test(selector)) {
-    const tag = escapeRegExp(selector);
-    return Array.from(html.matchAll(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, "gi"))).map(
-      (match) => match[0],
+    const tag = selector.toLowerCase();
+    return extractElementsMatchingOpeningTag(html, (_openingTag, tagName) => tagName.toLowerCase() === tag);
+  }
+
+  if (/^\.[\w-]+$/.test(selector)) {
+    const className = selector.slice(1);
+    return extractElementsMatchingOpeningTag(html, (openingTag) => getTagClassTokens(openingTag).includes(className));
+  }
+
+  if (/^#[\w-]+$/.test(selector)) {
+    const id = selector.slice(1);
+    return extractElementsMatchingOpeningTag(html, (openingTag) => getTagAttributeValue(openingTag, "id") === id);
+  }
+
+  const attributeSelector = selector.match(/^\[([\w:-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\]]+)))?\]$/);
+  if (attributeSelector) {
+    const [, attribute, doubleQuotedValue, singleQuotedValue, unquotedValue] = attributeSelector;
+    const expectedValue = doubleQuotedValue ?? singleQuotedValue ?? unquotedValue?.trim();
+    return extractElementsMatchingOpeningTag(html, (openingTag) => {
+      const value = getTagAttributeValue(openingTag, attribute);
+      return expectedValue === undefined ? value !== null : value === expectedValue;
+    });
+  }
+
+  const tagClassMatch = selector.match(/^([a-z][\w-]*)\.([\w-]+)$/i);
+  if (tagClassMatch) {
+    const [, expectedTagName, className] = tagClassMatch;
+    return extractElementsMatchingOpeningTag(
+      html,
+      (openingTag, tagName) =>
+        tagName.toLowerCase() === expectedTagName.toLowerCase() && getTagClassTokens(openingTag).includes(className),
     );
   }
 
   return [];
+}
+
+function extractElementsMatchingOpeningTag(html, predicate) {
+  const source = String(html ?? "");
+  const openingTagPattern = /<([a-z][\w:-]*)(?:\s[^<>]*)?>/gi;
+  const elements = [];
+
+  for (const match of source.matchAll(openingTagPattern)) {
+    const [openingTag, tagName] = match;
+    if (!predicate(openingTag, tagName)) {
+      continue;
+    }
+
+    const closingTagPattern = new RegExp(`</${escapeRegExp(tagName)}>`, "gi");
+    closingTagPattern.lastIndex = match.index + openingTag.length;
+    const closingMatch = closingTagPattern.exec(source);
+    if (!closingMatch) {
+      continue;
+    }
+
+    elements.push(source.slice(match.index, closingMatch.index + closingMatch[0].length));
+  }
+
+  return elements;
 }
 
 function splitDomBySlideComment(document) {

@@ -31,6 +31,15 @@ describe("production package configuration", () => {
     assert.ok(packageJson.build.asar);
   });
 
+  it("registers HTML and PowerPoint files as viewable presentation sources", () => {
+    const extensions = packageJson.build.fileAssociations.flatMap((association) => association.ext);
+
+    assert.ok(extensions.includes("html"));
+    assert.ok(extensions.includes("htm"));
+    assert.ok(extensions.includes("pptx"));
+    assert.ok(extensions.includes("ppt"));
+  });
+
   it("ships platform app icons", async () => {
     await access(packageJson.build.mac.icon);
     await access(packageJson.build.win.icon);

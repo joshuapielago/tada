@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TaDa! Product Presentation</title>
+    <style>
+      :root {
+        --ink: #23162e;
+        --ink-soft: #766b7c;
+        --paper: #fffdfd;
+        --cream: #fff7df;
+        --coral: #ff4f68;
+        --coral-deep: #df3651;
+        --mint: #32c6b1;
+        --yellow: #ffd24f;
+        --violet: #7c4dff;
+        --line: #eadbea;
+        --night: #170d24;
+        --night-soft: #261833;
+        --shadow: 0 2.5vh 7vh rgb(35 22 46 / 18%);
+        --font-display: "Arial Rounded MT Bold", "Avenir Next", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --font-ui: "Avenir Next", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        background: var(--night);
+        color: var(--ink);
+        font-family: var(--font-ui);
+        letter-spacing: 0;
+      }
+
+      section {
+        position: relative;
+        display: grid;
+        width: 100vw;
+        height: 100vh;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        padding: clamp(26px, 4.1vw, 58px);
+        background:
+          radial-gradient(circle at 88% 18%, rgb(255 79 104 / 16%) 0 0.55vw, transparent 0.6vw),
+          radial-gradient(circle at 82% 76%, rgb(50 198 177 / 14%) 0 0.45vw, transparent 0.5vw),
+          linear-gradient(135deg, var(--paper), #fbf6fb);
+      }
+
+      section.dark {
+        color: var(--paper);
+        background:
+          radial-gradient(circle at 12% 16%, rgb(255 79 104 / 34%) 0 0.55vw, transparent 0.6vw),
+          radial-gradient(circle at 82% 22%, rgb(255 210 79 / 32%) 0 0.55vw, transparent 0.6vw),
+          radial-gradient(circle at 72% 78%, rgb(50 198 177 / 28%) 0 0.5vw, transparent 0.55vw),
+          linear-gradient(90deg, rgb(255 255 255 / 6%) 1px, transparent 1px),
+          linear-gradient(0deg, rgb(255 255 255 / 6%) 1px, transparent 1px),
+          var(--night);
+        background-size: auto, auto, auto, 4.5vw 4.5vw, 4.5vw 4.5vw, auto;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        max-width: 9.8ch;
+        font-size: clamp(58px, 8.2vw, 118px);
+        line-height: 0.92;
+      }
+
+      h2 {
+        max-width: 12ch;
+        font-size: clamp(40px, 5.7vw, 82px);
+        line-height: 0.95;
+      }
+
+      h3 {
+        font-size: clamp(21px, 2.5vw, 34px);
+        line-height: 1.02;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: clamp(8px, 1vw, 14px);
+        color: var(--coral-deep);
+        font-size: clamp(12px, 1.35vw, 18px);
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: clamp(28px, 4.1vw, 54px);
+        height: 3px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+
+      .dark .eyebrow {
+        color: var(--yellow);
+      }
+
+      .lede {
+        max-width: 44ch;
+        color: var(--ink-soft);
+        font-size: clamp(18px, 2.15vw, 31px);
+        font-weight: 760;
+        line-height: 1.18;
+      }
+
+      .dark .lede {
+        color: rgb(255 253 253 / 76%);
+      }
+
+      .hero {
+        grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
+        gap: clamp(28px, 5vw, 70px);
+        align-items: center;
+      }
+
+      .hero-copy,
+      .stack {
+        display: grid;
+        align-content: center;
+        gap: clamp(18px, 2.8vw, 36px);
+        min-height: 0;
+      }
+
+      .brand {
+        display: inline-grid;
+        grid-template-columns: clamp(56px, 7vw, 88px) auto;
+        gap: clamp(13px, 1.6vw, 22px);
+        align-items: center;
+      }
+
+      .brand img {
+        width: 100%;
+        border-radius: 18%;
+        box-shadow: var(--shadow);
+      }
+
+      .brand strong {
+        display: block;
+        font-family: var(--font-display);
+        font-size: clamp(33px, 5vw, 76px);
+        font-weight: 900;
+        line-height: 0.9;
+      }
+
+      .brand span {
+        color: rgb(255 253 253 / 62%);
+        font-size: clamp(15px, 1.8vw, 25px);
+        font-weight: 800;
+      }
+
+      .mock-stage {
+        display: grid;
+        align-content: center;
+        gap: clamp(15px, 2vw, 26px);
+        min-height: 0;
+        padding: clamp(18px, 2.7vw, 38px);
+        border: 1px solid rgb(255 253 253 / 18%);
+        border-radius: 14px;
+        background:
+          linear-gradient(90deg, rgb(255 255 255 / 7%) 1px, transparent 1px),
+          linear-gradient(0deg, rgb(255 255 255 / 7%) 1px, transparent 1px),
+          var(--night-soft);
+        background-size: 42px 42px;
+        box-shadow: var(--shadow);
+      }
+
+      .mini-toolbar,
+      .show-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: clamp(8px, 1vw, 13px);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: clamp(30px, 3.5vw, 46px);
+        padding: 0 clamp(13px, 1.8vw, 22px);
+        border: 1px solid rgb(255 253 253 / 18%);
+        border-radius: 999px;
+        background: rgb(255 253 253 / 8%);
+        color: inherit;
+        font-size: clamp(13px, 1.45vw, 19px);
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .pill.hot {
+        border-color: var(--coral);
+        background: linear-gradient(135deg, var(--coral), var(--coral-deep));
+        color: var(--paper);
+      }
+
+      .file-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: clamp(13px, 1.6vw, 22px);
+        align-items: center;
+        padding: clamp(18px, 2.2vw, 30px);
+        border: 1px solid rgb(255 253 253 / 18%);
+        border-radius: 12px;
+        background: rgb(255 253 253 / 9%);
+      }
+
+      .file-icon {
+        display: grid;
+        width: clamp(54px, 6.5vw, 84px);
+        height: clamp(54px, 6.5vw, 84px);
+        place-items: center;
+        border-radius: 18%;
+        background: var(--cream);
+        color: var(--coral-deep);
+        font-family: var(--font-display);
+        font-size: clamp(20px, 2.6vw, 34px);
+        font-weight: 900;
+        transform: rotate(-3deg);
+      }
+
+      .file-card strong {
+        display: block;
+        font-size: clamp(20px, 2.6vw, 36px);
+        line-height: 1.04;
+      }
+
+      .file-card span {
+        display: block;
+        margin-top: 0.6vh;
+        color: rgb(255 253 253 / 66%);
+        font-size: clamp(13px, 1.5vw, 20px);
+        font-weight: 760;
+      }
+
+      .two-col {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: clamp(28px, 5vw, 74px);
+        align-items: center;
+      }
+
+      .three-col {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: clamp(14px, 2vw, 26px);
+        min-height: 0;
+      }
+
+      .card {
+        display: grid;
+        align-content: start;
+        gap: clamp(11px, 1.5vw, 18px);
+        min-height: 0;
+        padding: clamp(18px, 2.3vw, 30px);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgb(255 253 253 / 76%);
+        box-shadow: 0 1.5vh 4vh rgb(35 22 46 / 10%);
+      }
+
+      .dark .card {
+        border-color: rgb(255 253 253 / 14%);
+        background: rgb(255 253 253 / 8%);
+      }
+
+      .card .num {
+        display: grid;
+        width: clamp(42px, 5.2vw, 66px);
+        height: clamp(42px, 5.2vw, 66px);
+        place-items: center;
+        border-radius: 12px;
+        background: var(--cream);
+        color: var(--coral-deep);
+        font-family: var(--font-display);
+        font-size: clamp(19px, 2.4vw, 32px);
+        font-weight: 900;
+      }
+
+      .card p {
+        color: var(--ink-soft);
+        font-size: clamp(14px, 1.55vw, 21px);
+        font-weight: 730;
+        line-height: 1.25;
+      }
+
+      .dark .card p {
+        color: rgb(255 253 253 / 68%);
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: clamp(10px, 1.4vw, 18px);
+      }
+
+      .flow span {
+        display: grid;
+        min-height: clamp(78px, 11vw, 132px);
+        place-items: center;
+        padding: clamp(10px, 1.4vw, 18px);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: clamp(15px, 1.7vw, 23px);
+        font-weight: 900;
+        text-align: center;
+      }
+
+      .code {
+        display: grid;
+        gap: clamp(10px, 1.2vw, 16px);
+        padding: clamp(18px, 2.4vw, 34px);
+        border: 1px solid rgb(255 253 253 / 16%);
+        border-radius: 12px;
+        background: #100918;
+        color: var(--paper);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: clamp(15px, 1.65vw, 24px);
+        line-height: 1.35;
+        box-shadow: var(--shadow);
+      }
+
+      .code b {
+        color: var(--yellow);
+      }
+
+      .code span {
+        color: var(--mint);
+      }
+
+      .product-frame {
+        display: grid;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .product-frame.dark-frame {
+        border-color: rgb(255 253 253 / 15%);
+        background: #0e0b12;
+      }
+
+      .product-frame img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        object-fit: contain;
+      }
+
+      .image-copy {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+        gap: clamp(24px, 4vw, 56px);
+        align-items: center;
+      }
+
+      .image-copy .product-frame {
+        height: clamp(245px, 42vw, 470px);
+      }
+
+      .callout {
+        display: grid;
+        gap: clamp(12px, 1.6vw, 20px);
+        padding: clamp(18px, 2.5vw, 34px);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper);
+      }
+
+      .callout strong {
+        color: var(--coral-deep);
+        font-family: var(--font-display);
+        font-size: clamp(36px, 5vw, 72px);
+        line-height: 0.9;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: clamp(14px, 2vw, 26px);
+      }
+
+      .dot-field {
+        position: relative;
+        min-height: clamp(180px, 27vw, 350px);
+        overflow: hidden;
+        border: 1px solid rgb(255 253 253 / 14%);
+        border-radius: 14px;
+        background:
+          radial-gradient(circle, rgb(255 210 79 / 70%) 0 0.45vw, transparent 0.5vw),
+          radial-gradient(circle, rgb(50 198 177 / 60%) 0 0.38vw, transparent 0.44vw),
+          radial-gradient(circle, rgb(255 79 104 / 55%) 0 0.4vw, transparent 0.45vw),
+          #100918;
+        background-position: 14% 18%, 78% 28%, 54% 76%;
+        background-size: 15vw 12vw, 18vw 14vw, 17vw 13vw;
+        animation: drift 7s linear infinite;
+      }
+
+      @keyframes drift {
+        to {
+          background-position: 40% 38%, 18% 72%, 90% 16%;
+        }
+      }
+
+      .close {
+        place-items: center;
+        text-align: center;
+      }
+
+      .close h2 {
+        max-width: 9ch;
+        font-size: clamp(62px, 9.5vw, 138px);
+      }
+
+      .page {
+        position: absolute;
+        right: clamp(24px, 4.1vw, 58px);
+        bottom: clamp(18px, 3vw, 42px);
+        color: rgb(35 22 46 / 44%);
+        font-size: clamp(12px, 1.2vw, 17px);
+        font-weight: 900;
+      }
+
+      .dark .page {
+        color: rgb(255 253 253 / 46%);
+      }
+    </style>
+  </head>
+  <body>
+    <section class="dark hero">
+      <div class="hero-copy">
+        <div class="brand">
+          <img src="assets/tada-product-icon.png" alt="TaDa! icon">
+          <div>
+            <strong>TaDa!</strong>
+            <span>Presentation mode for HTML</span>
+          </div>
+        </div>
+        <p class="eyebrow">Product deck</p>
+        <h1>Present HTML like a deck.</h1>
+        <p class="lede">Give TaDa! a file, URL, localhost page, or pasted HTML. It turns generated work into a clean client-ready presentation.</p>
+      </div>
+      <div class="mock-stage">
+        <div class="mini-toolbar">
+          <span class="pill hot">Open HTML</span>
+          <span class="pill">Load URL</span>
+          <span class="pill">Present fullscreen</span>
+        </div>
+        <div class="file-card">
+          <div class="file-icon">.html</div>
+          <div>
+            <strong>Any single-file HTML deck</strong>
+            <span>Sections, slide classes, generated demos, and local client work.</span>
+          </div>
+        </div>
+      </div>
+      <span class="page">01 / 10</span>
+    </section>
+
+    <section class="two-col">
+      <div class="stack">
+        <p class="eyebrow">The shift</p>
+        <h2>AI writes HTML. Teams need to present it.</h2>
+      </div>
+      <div class="three-col">
+        <article class="card">
+          <span class="num">01</span>
+          <h3>Client demos</h3>
+          <p>Proposals, prototypes, reports, and product ideas now arrive as HTML.</p>
+        </article>
+        <article class="card">
+          <span class="num">02</span>
+          <h3>Local reviews</h3>
+          <p>Much of the work lives on disk or localhost before it is hosted.</p>
+        </article>
+        <article class="card">
+          <span class="num">03</span>
+          <h3>Fast iteration</h3>
+          <p>The presentation layer has to keep up with AI-speed changes.</p>
+        </article>
+      </div>
+      <span class="page">02 / 10</span>
+    </section>
+
+    <section class="dark two-col">
+      <div class="stack">
+        <p class="eyebrow">What TaDa! does</p>
+        <h2>One focused job: make HTML presentable.</h2>
+        <p class="lede">No editor. No save flow. No browser chrome in presentation mode. Just load, review, and present.</p>
+      </div>
+      <div class="flow">
+        <span>File</span>
+        <span>URL</span>
+        <span>Localhost</span>
+        <span>Paste</span>
+        <span>Show</span>
+      </div>
+      <span class="page">03 / 10</span>
+    </section>
+
+    <section class="two-col">
+      <div class="stack">
+        <p class="eyebrow">Structure aware</p>
+        <h2>It understands how AI tends to make decks.</h2>
+        <p class="lede">TaDa! detects common slide boundaries first, then falls back gracefully when the HTML is messy.</p>
+      </div>
+      <div class="code">
+        <div><b>&lt;section&gt;</b> slides</div>
+        <div><b>.slide</b>, <b>.deck</b>, <b>data-slide</b></div>
+        <div><span>&lt;hr&gt;</span> and <span>&lt;!-- slide --&gt;</span></div>
+        <div><b>h1 / h2</b> fallback groups</div>
+      </div>
+      <span class="page">04 / 10</span>
+    </section>
+
+    <section class="image-copy">
+      <div class="stack">
+        <p class="eyebrow">Sample: Ely</p>
+        <h2>A real client deck becomes a show.</h2>
+        <p class="lede">The Ely demo stays styled, keeps its assets, and navigates like a normal presentation.</p>
+      </div>
+      <figure class="product-frame">
+        <img src="assets/tada-product-ely-loaded.jpg" alt="Ely deck loaded inside TaDa!">
+      </figure>
+      <span class="page">05 / 10</span>
+    </section>
+
+    <section class="dark image-copy">
+      <figure class="product-frame dark-frame">
+        <img src="assets/tada-product-ely-slide.jpg" alt="Ely presentation slide rendered in TaDa!">
+      </figure>
+      <div class="stack">
+        <p class="eyebrow">Presentation controls</p>
+        <h2>Move like PowerPoint. Render like HTML.</h2>
+        <p class="lede">Arrow keys, thumbnails, side panel, presenter notes, fullscreen, and escape-to-return are all part of the desktop flow.</p>
+      </div>
+      <span class="page">06 / 10</span>
+    </section>
+
+    <section class="two-col">
+      <div class="stack">
+        <p class="eyebrow">Fidelity</p>
+        <h2>CSS, JavaScript, and motion stay alive.</h2>
+        <p class="lede">Canvas effects, animated charts, halftone fields, and generated interactions should keep running inside the slide frame.</p>
+      </div>
+      <div class="dot-field" aria-label="Animated confetti-style dot field"></div>
+      <span class="page">07 / 10</span>
+    </section>
+
+    <section class="dark two-col">
+      <div class="stack">
+        <p class="eyebrow">Standalone show</p>
+        <h2>Export a file that opens already presenting.</h2>
+        <p class="lede">For a client handoff, TaDa! can create an HTML show that starts in clean presentation mode.</p>
+      </div>
+      <div class="file-card">
+        <div class="file-icon">show</div>
+        <div>
+          <strong>Open. Click. Present.</strong>
+          <span>No app UI, no setup explanation, no browser address bar in the moment.</span>
+        </div>
+      </div>
+      <span class="page">08 / 10</span>
+    </section>
+
+    <section class="two-col">
+      <div class="stack">
+        <p class="eyebrow">Production path</p>
+        <h2>Desktop first, cross-platform ready.</h2>
+        <p class="lede">Electron packaging gives TaDa! a Mac and Windows path, with update plumbing ready for release workflows.</p>
+      </div>
+      <div class="metric-row">
+        <article class="callout">
+          <strong>83</strong>
+          <h3>Regression tests</h3>
+        </article>
+        <article class="callout">
+          <strong>Mac</strong>
+          <h3>Apple Silicon build</h3>
+        </article>
+        <article class="callout">
+          <strong>Win</strong>
+          <h3>Installer target</h3>
+        </article>
+      </div>
+      <span class="page">09 / 10</span>
+    </section>
+
+    <section class="dark close">
+      <div class="stack">
+        <div class="brand">
+          <img src="assets/tada-product-icon.png" alt="TaDa! icon">
+          <div>
+            <strong>TaDa!</strong>
+            <span>Drop HTML. Cue the show.</span>
+          </div>
+        </div>
+        <h2>Presentation mode for HTML.</h2>
+        <div class="show-toolbar">
+          <span class="pill hot">Open HTML</span>
+          <span class="pill">Load URL</span>
+          <span class="pill">Present</span>
+        </div>
+      </div>
+      <span class="page">10 / 10</span>
+    </section>
+  </body>
+</html>

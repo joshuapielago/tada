@@ -114,6 +114,30 @@ describe("detectBoundaryMode", () => {
   it("falls back to a single document slide when no boundaries are visible", () => {
     assert.equal(detectBoundaryMode("<main><p>One continuous page</p></main>", "section"), "document");
   });
+
+  it("does not classify deck marker names in copy as an existing deck runtime", () => {
+    const html = `<!doctype html>
+      <html>
+        <body>
+          <main>
+            <section>
+              <h1>Import anything</h1>
+              <p>TaDa! recognizes markers such as <code>data-slide</code>, <code>data-notes</code>, and <code>.deck</code> when they appear as real HTML structure.</p>
+            </section>
+            <section>
+              <h1>Present instantly</h1>
+            </section>
+          </main>
+        </body>
+      </html>`;
+
+    assert.equal(analyzeDeckHtml(html).mode, "selector");
+    assert.equal(detectBoundaryMode(html, "section"), "selector");
+
+    const result = extractSlides(html, { selector: "section" });
+    assert.equal(result.mode, "selector");
+    assert.equal(result.slides.length, 2);
+  });
 });
 
 describe("injectBaseElement", () => {
@@ -202,6 +226,31 @@ describe("generated deck extraction", () => {
     assert.match(result.slides[1].html, /<h1>Two<\/h1>/);
   });
 
+  it("preserves the authored slide display model instead of forcing active slides to flex", () => {
+    const html = `<!doctype html>
+      <html>
+        <head>
+          <style>
+            section.product-slide {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+            }
+          </style>
+        </head>
+        <body>
+          <section class="product-slide"><h1>Grid title</h1><p>Grid body</p></section>
+          <section class="product-slide"><h1>Second</h1></section>
+        </body>
+      </html>`;
+    const result = extractSlides(html, { selector: "section" });
+
+    assert.equal(result.mode, "selector");
+    assert.equal(result.slides.length, 2);
+    assert.match(result.slides[0].html, /section\.product-slide/);
+    assert.doesNotMatch(result.slides[0].html, /deckify-visible[\s\S]*display:\s*flex\s*!important/);
+    assert.doesNotMatch(result.slides[0].runtimeHtml, /slide\.style\.setProperty\("display", "flex", "important"\)/);
+  });
+
   it("splits Claude-style slide comments when no selector matches", () => {
     const html = `<!doctype html>
       <html>
@@ -271,6 +320,8 @@ describe("generated deck extraction", () => {
     assert.match(result.slides[1].runtimeHtml, /sectionScriptLoaded/);
     assert.match(result.slides[1].runtimeHtml, /document\.querySelector\("#two"\)/);
     assert.match(result.slides[1].runtimeHtml, /const slideSelectors = \["section"/);
+    assert.match(result.slides[1].runtimeHtml, /const hideInactiveSlides = true;/);
+    assert.match(result.slides[1].runtimeHtml, /slide\.style\.setProperty\("display", "none", "important"\)/);
     assert.match(result.slides[1].runtimeHtml, /data-tada-runtime-slide="1"/);
   });
 
@@ -301,6 +352,7 @@ describe("generated deck extraction", () => {
     assert.match(result.slides[0].runtimeHtml, /data-tada-runtime-slide="0"/);
     assert.match(result.slides[1].runtimeHtml, /data-tada-runtime-slide="1"/);
     assert.match(result.slides[1].runtimeHtml, /const targetIndex = 1;/);
+    assert.match(result.slides[1].runtimeHtml, /const hideInactiveSlides = false;/);
     assert.match(result.slides[1].runtimeHtml, /tadaSetActiveSlide\(targetIndex\)/);
     assert.match(result.slides[1].runtimeHtml, /applyActiveSlide\(\);/);
     assert.doesNotMatch(result.slides[1].runtimeHtml, /requestAnimationFrame\(applyActiveSlide\)/);

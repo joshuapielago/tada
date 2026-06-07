@@ -73,6 +73,12 @@
         <path d="m7 9 5-5 5 5"></path>
         <path d="M5 16v4h14v-4"></path>
       </symbol>
+      <symbol id="icon-clipboard" viewBox="0 0 24 24">
+        <path d="M9 5h6"></path>
+        <path d="M10 3h4l1 2h3v16H6V5h3z"></path>
+        <path d="M9 12h6"></path>
+        <path d="M9 16h4"></path>
+      </symbol>
       <symbol id="icon-wand" viewBox="0 0 24 24">
         <path d="m3 21 9-9"></path>
         <path d="m10 5 2-2 3 3-2 2z"></path>
@@ -88,6 +94,9 @@
         <div class="brand-lockup">
           <div class="brand-mark" aria-hidden="true">
             <svg class="icon"><use href="#icon-sparkles"></use></svg>
+            <span class="brand-confetti brand-confetti-coral"></span>
+            <span class="brand-confetti brand-confetti-mint"></span>
+            <span class="brand-confetti brand-confetti-yellow"></span>
           </div>
           <div class="title-lockup">
             <strong>TaDa!</strong>
@@ -103,7 +112,7 @@
               type="text"
               spellcheck="false"
               autocomplete="off"
-              placeholder="URL, localhost URL, file:// URL, or local path"
+              placeholder="HTML, PowerPoint, Google Slides, website, localhost, or file path"
               aria-label="Source URL or path"
             >
           </label>
@@ -114,7 +123,7 @@
           <button class="icon-button command-button command-primary" id="presentButton" type="button" aria-label="Start presentation" title="Start presentation">
             <svg class="icon"><use href="#icon-presentation"></use></svg>
           </button>
-          <button class="icon-button command-button" id="openButton" type="button" aria-label="Open HTML file" title="Open HTML file">
+          <button class="icon-button command-button" id="openButton" type="button" aria-label="Open file" title="Open file">
             <svg class="icon"><use href="#icon-folder-open"></use></svg>
           </button>
           <button class="icon-button command-button" id="exportShowButton" type="button" aria-label="Export standalone TaDa! show" title="Export standalone TaDa! show">
@@ -195,18 +204,29 @@
                 <span></span>
                 <span></span>
                 <span></span>
+                <span></span>
               </div>
-              <strong>Drop an HTML deck to start.</strong>
-              <p>Open a file, paste raw HTML anywhere, or load a URL from the top bar.</p>
+              <strong>Drop a deck. Cue TaDa!</strong>
+              <p>Open HTML or PowerPoint, paste raw HTML, load Google Slides, or turn a website into slides.</p>
               <div class="empty-actions">
-                <button class="button primary" id="emptyOpenButton" type="button">Open HTML</button>
-                <button class="button" id="emptyFocusSourceButton" type="button">Paste URL</button>
-                <button class="button" id="copyPromptButton" type="button">Copy Claude Prompt</button>
+                <button class="button primary button-with-icon" id="emptyOpenButton" type="button">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-folder-open"></use></svg>
+                  Open file
+                </button>
+                <button class="button button-with-icon" id="emptyFocusSourceButton" type="button">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                  Paste URL
+                </button>
+                <button class="button button-with-icon" id="copyPromptButton" type="button">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-clipboard"></use></svg>
+                  Copy prompt
+                </button>
               </div>
               <div class="empty-hints" aria-label="Accepted sources">
-                <span>.html</span>
-                <span>localhost</span>
-                <span>remote URL</span>
+                <span>HTML</span>
+                <span>PowerPoint</span>
+                <span>Google Slides</span>
+                <span>websites</span>
               </div>
             </div>
 
