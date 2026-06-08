@@ -27,6 +27,34 @@ npm run dist:win
 
 `npm run release` publishes artifacts and update metadata to the configured provider. Use it only after signing credentials are configured.
 
+## Unsigned Beta Channel
+
+GitHub Actions includes an **Unsigned Beta Release** workflow that publishes macOS and Windows artifacts to a single GitHub prerelease without requiring signing secrets. This is intended for internal testing and early team distribution.
+
+To publish an unsigned beta:
+
+```bash
+npm version 0.1.1-beta.0 --no-git-tag-version
+git add package.json package-lock.json
+git commit -m "Release v0.1.1-beta.0"
+git tag v0.1.1-beta.0
+git push origin main v0.1.1-beta.0
+```
+
+The workflow can also be run manually from GitHub Actions by entering an existing tag such as `v0.1.1-beta.0`.
+
+The unsigned beta release uploads:
+
+- macOS `.dmg`, `.zip`, blockmaps, and `latest-mac.yml`.
+- Windows NSIS `.exe`, blockmaps, and `latest.yml`.
+
+Unsigned beta caveats:
+
+- Mac users may see Gatekeeper warnings and may need to right-click **Open**.
+- Mac auto-update is not production-ready until signing and notarization are added.
+- Windows builds are unsigned and may trigger SmartScreen.
+- Do not use unsigned beta builds as the public production distribution channel.
+
 ## macOS
 
 macOS produces both `.dmg` and `.zip` artifacts. Keep both: the ZIP artifact is required by the macOS update flow, while the DMG is the normal installer users download.

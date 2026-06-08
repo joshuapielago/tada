@@ -45,6 +45,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 app.setName("TaDa!");
+configureAboutPanel();
 
 app.on("open-file", (event, filePath) => {
   event.preventDefault();
@@ -286,6 +287,17 @@ function createMenu() {
     {
       label: "Help",
       submenu: [
+        ...(!isMac
+          ? [
+              {
+                label: "About TaDa!",
+                click: () => {
+                  showAboutPanel();
+                },
+              },
+              { type: "separator" },
+            ]
+          : []),
         {
           label: "Check for Updates...",
           click: () => {
@@ -297,6 +309,40 @@ function createMenu() {
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+function configureAboutPanel() {
+  app.setAboutPanelOptions({
+    applicationName: "TaDa!",
+    applicationVersion: packageConfig.version,
+    version: packageConfig.version,
+    copyright: `© 2026 Joshua Pielago / LOKAL`,
+    authors: ["Joshua Pielago", "LOKAL"],
+    website: "https://github.com/joshuapielago/tada",
+    credits: "Presentation mode for HTML, PowerPoint, Google Slides, and websites.",
+    iconPath: path.join(__dirname, "..", "build", "icon.png"),
+  });
+}
+
+function showAboutPanel() {
+  const owner = BrowserWindow.getFocusedWindow() ?? mainWindow ?? undefined;
+  dialog.showMessageBox(owner, {
+    type: "info",
+    title: "About TaDa!",
+    message: "TaDa!",
+    detail: [
+      `Version ${packageConfig.version}`,
+      "",
+      "Presentation mode for HTML, PowerPoint, Google Slides, and websites.",
+      "",
+      "Author: Joshua Pielago",
+      "Company: LOKAL",
+      "https://github.com/joshuapielago/tada",
+      "",
+      "© 2026 Joshua Pielago / LOKAL",
+    ].join("\n"),
+    buttons: ["OK"],
+  });
 }
 
 function installSecurityGuards() {

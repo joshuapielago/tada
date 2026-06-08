@@ -1,7 +1,7 @@
 {
   "name": "tada",
   "productName": "TaDa!",
-  "version": "0.1.0",
+  "version": "0.1.1-beta.0",
   "private": true,
   "description": "Present any HTML file or URL like a slide deck.",
   "type": "module",
@@ -17,7 +17,7 @@
     "release": "electron-builder --mac --win --publish always",
     "test": "node --test test/*.test.js test/*.test.cjs"
   },
-  "author": "TaDa!",
+  "author": "Joshua Pielago / LOKAL",
   "license": "UNLICENSED",
   "devDependencies": {
     "electron": "^42.3.3",
