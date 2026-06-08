@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 import { describe, it } from "node:test";
+import { pathToFileURL } from "node:url";
 
 import {
   classifyFilePath,
@@ -18,35 +20,41 @@ describe("classifySourceInput", () => {
   });
 
   it("classifies local and file-url HTML inputs as native HTML", () => {
-    assert.deepEqual(classifySourceInput("/Users/jp/demo.html"), {
+    const htmlPath = path.resolve("/Users/jp/demo.html");
+    const htmPath = path.resolve("/Users/jp/demo.htm");
+
+    assert.deepEqual(classifySourceInput(htmlPath), {
       kind: "html",
       inputType: "file",
-      filePath: "/Users/jp/demo.html",
-      sourceUrl: "file:///Users/jp/demo.html",
+      filePath: htmlPath,
+      sourceUrl: pathToFileURL(htmlPath).href,
       sourceLabel: "demo.html",
     });
 
-    assert.deepEqual(classifySourceInput("file:///Users/jp/demo.htm"), {
+    assert.deepEqual(classifySourceInput(pathToFileURL(htmPath).href), {
       kind: "html",
       inputType: "file-url",
-      filePath: "/Users/jp/demo.htm",
-      sourceUrl: "file:///Users/jp/demo.htm",
+      filePath: htmPath,
+      sourceUrl: pathToFileURL(htmPath).href,
       sourceLabel: "demo.htm",
     });
   });
 
   it("classifies PowerPoint files from local paths and file URLs", () => {
-    assert.deepEqual(classifySourceInput("/Users/jp/client-deck.pptx"), {
+    const pptxPath = path.resolve("/Users/jp/client-deck.pptx");
+    const pptPath = path.resolve("/Users/jp/legacy.ppt");
+
+    assert.deepEqual(classifySourceInput(pptxPath), {
       kind: "powerpoint",
       inputType: "file",
-      filePath: "/Users/jp/client-deck.pptx",
-      sourceUrl: "file:///Users/jp/client-deck.pptx",
+      filePath: pptxPath,
+      sourceUrl: pathToFileURL(pptxPath).href,
       sourceLabel: "client-deck.pptx",
       extension: ".pptx",
     });
 
-    assert.deepEqual(classifyFilePath("/Users/jp/legacy.ppt").kind, "powerpoint");
-    assert.deepEqual(classifyFilePath("/Users/jp/legacy.ppt").extension, ".ppt");
+    assert.deepEqual(classifyFilePath(pptPath).kind, "powerpoint");
+    assert.deepEqual(classifyFilePath(pptPath).extension, ".ppt");
   });
 
   it("classifies Google Slides URLs with the presentation id", () => {
@@ -82,11 +90,13 @@ describe("classifySourceInput", () => {
   });
 
   it("returns unknown for unsupported local files", () => {
-    assert.deepEqual(classifyFilePath("/Users/jp/demo.key"), {
+    const keyPath = path.resolve("/Users/jp/demo.key");
+
+    assert.deepEqual(classifyFilePath(keyPath), {
       kind: "unknown",
       inputType: "file",
-      filePath: "/Users/jp/demo.key",
-      sourceUrl: "file:///Users/jp/demo.key",
+      filePath: keyPath,
+      sourceUrl: pathToFileURL(keyPath).href,
       sourceLabel: "demo.key",
       extension: ".key",
     });

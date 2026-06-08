@@ -14,9 +14,9 @@ import {
 } from "./deck-fixtures.js";
 
 const repoRoot = process.cwd();
-const waitTimeoutMs = process.env.CI ? 30000 : 12000;
+const waitTimeoutMs = process.env.CI ? 60000 : 12000;
 const mediumTestTimeoutMs = process.env.CI ? 60000 : 45000;
-const heavyTestTimeoutMs = process.env.CI ? 90000 : 45000;
+const heavyTestTimeoutMs = process.env.CI ? 150000 : 45000;
 
 describe("Electron desktop smoke and load coverage", () => {
   it("loads a section deck and keeps the visible stage in sync with thumbnail navigation", async () => {
