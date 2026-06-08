@@ -14,6 +14,9 @@ import {
 } from "./deck-fixtures.js";
 
 const repoRoot = process.cwd();
+const waitTimeoutMs = process.env.CI ? 30000 : 12000;
+const mediumTestTimeoutMs = process.env.CI ? 60000 : 45000;
+const heavyTestTimeoutMs = process.env.CI ? 90000 : 45000;
 
 describe("Electron desktop smoke and load coverage", () => {
   it("loads a section deck and keeps the visible stage in sync with thumbnail navigation", async () => {
@@ -107,7 +110,7 @@ describe("Electron desktop smoke and load coverage", () => {
       const page = await connectToRenderer(app.port);
       await evalValue(page, `document.querySelector("#presentButton")?.click()`);
       const audience = await connectToAudience(app.port);
-      await waitFor(async () => (await readAudienceState(audience)).counter === "1 / 5", { timeoutMs: 12000 });
+      await waitFor(async () => (await readAudienceState(audience)).counter === "1 / 5", { timeoutMs: waitTimeoutMs });
 
       assert.deepEqual(await readAudienceState(audience), {
         hasToolbar: false,
@@ -118,21 +121,21 @@ describe("Electron desktop smoke and load coverage", () => {
 
       await clickThumbnail(page, 3);
       await waitFor(async () => (await readPageState(page)).position === "4 / 5");
-      await waitFor(async () => (await readAudienceState(audience)).counter === "4 / 5", { timeoutMs: 12000 });
+      await waitFor(async () => (await readAudienceState(audience)).counter === "4 / 5", { timeoutMs: waitTimeoutMs });
 
       await page.close();
       await audience.close();
     } finally {
       await app.close();
     }
-  }, { timeout: 45000 });
+  }, { timeout: mediumTestTimeoutMs });
 
   it("can load and navigate a large client deck without stale stage content", async () => {
     const app = await launchTadaWithDeck(sectionDeck({ count: 80, includeScripts: false }), "large-client.html");
 
     try {
       const page = await connectToRenderer(app.port);
-      await waitFor(async () => (await readPageState(page)).thumbnails === 80, { timeoutMs: 12000 });
+      await waitFor(async () => (await readPageState(page)).thumbnails === 80, { timeoutMs: waitTimeoutMs });
       assert.deepEqual(await readPageState(page), {
         source: "large-client.html",
         position: "1 / 80",
@@ -142,9 +145,9 @@ describe("Electron desktop smoke and load coverage", () => {
       });
 
       await clickThumbnail(page, 79);
-      await waitFor(async () => (await readPageState(page)).position === "80 / 80", { timeoutMs: 12000 });
+      await waitFor(async () => (await readPageState(page)).position === "80 / 80", { timeoutMs: waitTimeoutMs });
       const frameState = await waitForFrameState(app.port, (state) => isOnlyVisibleSlide(state, 79, /Section slide 80/), {
-        timeoutMs: 12000,
+        timeoutMs: waitTimeoutMs,
       });
 
       assert.equal(frameState.visibleIndexes.length, 1);
@@ -155,7 +158,7 @@ describe("Electron desktop smoke and load coverage", () => {
     } finally {
       await app.close();
     }
-  }, { timeout: 45000 });
+  }, { timeout: heavyTestTimeoutMs });
 
   it("loads the TaDa product deck and shows the Ely sample slide when selected", async () => {
     const deckPath = path.join(repoRoot, "docs", "tada-product-presentation.html");
@@ -163,19 +166,19 @@ describe("Electron desktop smoke and load coverage", () => {
 
     try {
       const page = await connectToRenderer(app.port);
-      await waitFor(async () => (await readPageState(page)).thumbnails >= 8, { timeoutMs: 12000 });
+      await waitFor(async () => (await readPageState(page)).thumbnails >= 8, { timeoutMs: waitTimeoutMs });
 
       await assertProductDeckSlidesFit(page, app.port);
 
       await clickThumbnail(page, 1);
-      await waitFor(async () => (await readPageState(page)).position === "2 / 10", { timeoutMs: 12000 });
+      await waitFor(async () => (await readPageState(page)).position === "2 / 10", { timeoutMs: waitTimeoutMs });
       const layoutState = await waitForFrameState(
         app.port,
         (state) =>
           isOnlyVisibleSlide(state, 1, /AI writes HTML/) &&
           state.activeSlideDisplay === "grid" &&
           state.activeSlideScrollWidth <= state.viewportWidth + 2,
-        { timeoutMs: 12000 },
+        { timeoutMs: waitTimeoutMs },
       );
 
       assert.equal(layoutState.activeSlideDisplay, "grid");
@@ -185,11 +188,11 @@ describe("Electron desktop smoke and load coverage", () => {
       );
 
       await clickThumbnail(page, 4);
-      await waitFor(async () => (await readPageState(page)).position === "5 / 10", { timeoutMs: 12000 });
+      await waitFor(async () => (await readPageState(page)).position === "5 / 10", { timeoutMs: waitTimeoutMs });
       const frameState = await waitForFrameState(
         app.port,
         (state) => isOnlyVisibleSlide(state, 4, /A real client deck becomes a show/),
-        { timeoutMs: 12000 },
+        { timeoutMs: waitTimeoutMs },
       );
 
       assert.equal(frameState.visibleIndexes.length, 1);
@@ -200,7 +203,7 @@ describe("Electron desktop smoke and load coverage", () => {
     } finally {
       await app.close();
     }
-  }, { timeout: 45000 });
+  }, { timeout: heavyTestTimeoutMs });
 });
 
 async function launchTadaWithDeck(html, fileName) {
@@ -375,11 +378,11 @@ async function assertProductDeckSlidesFit(page, port) {
   const { thumbnails } = await readPageState(page);
   for (let index = 0; index < thumbnails; index += 1) {
     await clickThumbnail(page, index);
-    await waitFor(async () => (await readPageState(page)).activeThumb === String(index), { timeoutMs: 12000 });
+    await waitFor(async () => (await readPageState(page)).activeThumb === String(index), { timeoutMs: waitTimeoutMs });
     const frameState = await waitForFrameState(
       port,
       (state) => state.visibleIndexes.length === 1 && state.visibleIndexes[0] === index,
-      { timeoutMs: 12000 },
+      { timeoutMs: waitTimeoutMs },
     );
 
     assert.ok(

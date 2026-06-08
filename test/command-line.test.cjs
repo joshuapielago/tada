@@ -5,7 +5,7 @@ const test = require("node:test");
 const { collectCommandLineOpenRequests } = require("../electron/command-line.cjs");
 
 test("collects file paths after the app path in development launches", () => {
-  const cwd = "/tmp/tada";
+  const cwd = path.resolve("/tmp/tada");
   const result = collectCommandLineOpenRequests(["/Applications/Electron", ".", "deck.html"], {
     appPath: cwd,
     cwd,
@@ -21,8 +21,8 @@ test("collects file paths after the app path in development launches", () => {
 });
 
 test("collects the file association argument for packaged launches", () => {
-  const cwd = "/tmp/tada";
-  const filePath = "/tmp/tada/client-demo.html";
+  const cwd = path.resolve("/tmp/tada");
+  const filePath = path.resolve(cwd, "client-demo.html");
   const result = collectCommandLineOpenRequests(["/Applications/TaDa!.app/Contents/MacOS/TaDa!", filePath], {
     appPath: "/Applications/TaDa!.app/Contents/Resources/app.asar",
     cwd,
@@ -38,7 +38,7 @@ test("collects the file association argument for packaged launches", () => {
 });
 
 test("keeps present-on-open while filtering command flags", () => {
-  const cwd = "/tmp/tada";
+  const cwd = path.resolve("/tmp/tada");
   const result = collectCommandLineOpenRequests(["/Applications/TaDa!", "--present", "deck.html"], {
     appPath: "/Applications/TaDa!.app/Contents/Resources/app.asar",
     cwd,
