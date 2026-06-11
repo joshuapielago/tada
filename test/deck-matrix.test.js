@@ -8,6 +8,7 @@ import {
 } from "../src/shared/deckify.js";
 import {
   articleDeck,
+  bundledStandaloneDeck,
   commentDeck,
   customClassDeck,
   dataSlideDeck,
@@ -70,6 +71,7 @@ describe("deck fixture matrix", () => {
       { name: "Remark", html: remarkDeck(), expectedTitle: /Remark two/ },
       { name: "Swiper", html: swiperDeck(), expectedTitle: /Swiper two/ },
       { name: "Data slide", html: dataSlideDeck(), expectedTitle: /Data two/ },
+      { name: "Bundled standalone", html: bundledStandaloneDeck(), expectedTitle: /Bundled two/ },
     ];
 
     for (const testCase of cases) {

@@ -14,6 +14,7 @@ import {
   normalizeSelector,
   normalizeSourceUrl,
 } from "../src/shared/deckify.js";
+import { bundledStandaloneDeck } from "./deck-fixtures.js";
 
 const generatedDeckPath = path.resolve("test/fixtures/generated-active-deck.html");
 
@@ -137,6 +138,48 @@ describe("detectBoundaryMode", () => {
     const result = extractSlides(html, { selector: "section" });
     assert.equal(result.mode, "selector");
     assert.equal(result.slides.length, 2);
+  });
+
+  it("unwraps bundled standalone deck templates before detecting slide boundaries", () => {
+    const html = bundledStandaloneDeck();
+
+    assert.equal(analyzeDeckHtml(html).mode, "existing-deck");
+    assert.equal(detectBoundaryMode(html, "section"), "existing-deck");
+
+    const result = extractSlides(html, {
+      selector: "section",
+      sourceUrl: "file:///tmp/awaken-standalone.html",
+    });
+
+    assert.equal(result.mode, "existing-deck");
+    assert.equal(result.slides.length, 2);
+    assert.match(result.slides[0].html, /Bundled one/);
+    assert.match(result.slides[1].html, /Bundled two/);
+    assert.match(result.slides[0].html, /data:image\/png;base64,aGVsbG8=/);
+    assert.doesNotMatch(result.slides[0].html, /<script/i);
+    assert.match(result.slides[1].runtimeHtml, /__bundler\/template/);
+    assert.match(result.slides[1].runtimeHtml, /no-rail/);
+    assert.match(result.slides[1].runtimeHtml, /\[data-deck-slide\]/);
+
+    const runtimeTemplateText = result.slides[1].runtimeHtml.match(
+      /<script\b(?=[^>]*\btype\s*=\s*"__bundler\/template")[^>]*>([\s\S]*?)<\/script>/i,
+    )?.[1];
+    assert.equal(JSON.parse(runtimeTemplateText).includes('<script src="deck-runtime"></script>'), true);
+  });
+
+  it("inlines bundled manifest assets only where they are URL references", () => {
+    const result = extractSlides(bundledStandaloneDeck({ imageAssetId: "a", fontAssetId: "f" }), {
+      selector: "section",
+      sourceUrl: "file:///tmp/short-assets.html",
+    });
+
+    assert.equal(result.mode, "existing-deck");
+    assert.equal(result.slides.length, 2);
+    assert.match(result.slides[0].html, /<section data-deck-slide="0" data-label="Cover"/);
+    assert.match(result.slides[0].html, /<h1>Bundled one<\/h1>/);
+    assert.match(result.slides[0].html, /<img src="data:image\/png;base64,aGVsbG8="/);
+    assert.match(result.slides[0].html, /url\("data:font\/woff2;base64,Zm9udA=="\)/);
+    assert.doesNotMatch(result.slides[0].html, /ddata:image/);
   });
 });
 
@@ -353,7 +396,8 @@ describe("generated deck extraction", () => {
     assert.match(result.slides[1].runtimeHtml, /data-tada-runtime-slide="1"/);
     assert.match(result.slides[1].runtimeHtml, /const targetIndex = 1;/);
     assert.match(result.slides[1].runtimeHtml, /const hideInactiveSlides = false;/);
-    assert.match(result.slides[1].runtimeHtml, /tadaSetActiveSlide\(targetIndex\)/);
+    assert.match(result.slides[1].runtimeHtml, /pendingSlideIndex = targetIndex/);
+    assert.match(result.slides[1].runtimeHtml, /schedulePendingApply/);
     assert.match(result.slides[1].runtimeHtml, /applyActiveSlide\(\);/);
     assert.doesNotMatch(result.slides[1].runtimeHtml, /requestAnimationFrame\(applyActiveSlide\)/);
     assert.match(result.slides[1].runtimeHtml, /tadaReplayActiveSlideAnimations/);
