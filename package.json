@@ -1,7 +1,7 @@
 {
   "name": "tada",
   "productName": "TaDa!",
-  "version": "0.1.1-beta.2",
+  "version": "0.1.1-beta.3",
   "private": true,
   "description": "Present any HTML file or URL like a slide deck.",
   "type": "module",
