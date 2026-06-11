@@ -101,6 +101,48 @@ export function dataSlideDeck() {
     </html>`;
 }
 
+export function bundledStandaloneDeck({ imageAssetId = "image-asset", fontAssetId = "font-asset", runtimeAssetId = "deck-runtime" } = {}) {
+  const template = `<!doctype html>
+    <html>
+      <head>
+        <style>
+          @font-face { font-family: Demo; src: url("${fontAssetId}"); }
+          deck-stage { display: block; width: 100vw; height: 100vh; }
+          [data-deck-slide] { display: none; }
+          [data-deck-slide].current { display: block; }
+        </style>
+      </head>
+      <body>
+        <deck-stage width="1920" height="1080">
+          <section data-deck-slide="0" data-label="Cover" class="current"><h1>Bundled one</h1><img src="${imageAssetId}" alt="Demo"></section>
+          <section data-deck-slide="1" data-label="Proof"><h1>Bundled two</h1></section>
+        </deck-stage>
+        <script src="${runtimeAssetId}"></script>
+      </body>
+    </html>`;
+
+  return `<!doctype html>
+    <html>
+      <body>
+        <div id="__bundler_thumbnail">Loading preview</div>
+        <script type="__bundler/manifest">${JSON.stringify({
+          [imageAssetId]: { mime: "image/png", compressed: false, data: "aGVsbG8=" },
+          [fontAssetId]: { mime: "font/woff2", compressed: false, data: "Zm9udA==" },
+          [runtimeAssetId]: { mime: "text/javascript", compressed: true, data: "H4sIAAAAAAAAA0utSMwtyElVKM8vyklRBAAueAtbDgAAAA==" },
+        })}</script>
+        <script type="__bundler/template">${serializeBundlerScriptJson(template)}</script>
+        <script>
+          (() => {
+            const source = document.querySelector('script[type="__bundler/template"]')?.textContent ?? "";
+            const templateDocument = new DOMParser().parseFromString(JSON.parse(source), "text/html");
+            document.head.innerHTML = templateDocument.head.innerHTML;
+            document.body.innerHTML = templateDocument.body.innerHTML;
+          })();
+        </script>
+      </body>
+    </html>`;
+}
+
 export function markerCopyDeck() {
   return `<!doctype html>
     <html>
@@ -114,6 +156,10 @@ export function markerCopyDeck() {
         </main>
       </body>
     </html>`;
+}
+
+function serializeBundlerScriptJson(value) {
+  return JSON.stringify(value).replaceAll("<", "\\u003C");
 }
 
 export function articleDeck() {

@@ -8,6 +8,7 @@ import { describe, it } from "node:test";
 import electronPath from "electron";
 
 import {
+  bundledStandaloneDeck,
   existingActiveDeck,
   horizontalRuleDeck,
   sectionDeck,
@@ -70,6 +71,44 @@ describe("Electron desktop smoke and load coverage", () => {
 
       assert.equal(frameState.generatedBooted, true);
       assert.match(frameState.bodyText, /Generated three/);
+      await page.close();
+    } finally {
+      await app.close();
+    }
+  }, { timeout: 30000 });
+
+  it("loads a bundled standalone deck as first-class slides instead of one embedded deck", async () => {
+    const app = await launchTadaWithDeck(bundledStandaloneDeck(), "bundled-standalone.html");
+
+    try {
+      const page = await connectToRenderer(app.port);
+      assert.deepEqual(await readPageState(page), {
+        source: "bundled-standalone.html",
+        position: "1 / 2",
+        mode: "existing-deck",
+        thumbnails: 2,
+        activeThumb: "0",
+      });
+
+      let frameState = await waitForFrameState(
+        app.port,
+        (state) => state.deckStageNoRail && isOnlyVisibleSlide(state, 0, /Bundled one/),
+        { timeoutMs: waitTimeoutMs },
+      );
+      assert.equal(frameState.deckStageNoRail, true);
+      assert.doesNotMatch(frameState.bodyText, /Loading preview/);
+
+      await clickThumbnail(page, 1);
+      await waitFor(async () => (await readPageState(page)).position === "2 / 2", { timeoutMs: waitTimeoutMs });
+      frameState = await waitForFrameState(
+        app.port,
+        (state) => state.deckStageNoRail && isOnlyVisibleSlide(state, 1, /Bundled two/),
+        { timeoutMs: waitTimeoutMs },
+      );
+
+      assert.equal(frameState.visibleIndexes.length, 1);
+      assert.equal(frameState.visibleIndexes[0], 1);
+      assert.match(frameState.bodyText, /Bundled two/);
       await page.close();
     } finally {
       await app.close();
@@ -349,6 +388,7 @@ async function readFrameState(port) {
           bodyText: document.body.innerText,
           generatedBooted: Boolean(window.generatedBooted),
           sectionBooted: Boolean(window.sectionDeckBooted),
+          deckStageNoRail: Boolean(document.querySelector("deck-stage[no-rail]")),
           activeSlideDisplay: activeStyle?.display ?? "",
           activeSlideScrollWidth: activeSlide?.scrollWidth ?? 0,
           activeSlideScrollHeight: activeSlide?.scrollHeight ?? 0,

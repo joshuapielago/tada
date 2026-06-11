@@ -2,6 +2,8 @@ const DEFAULT_SELECTOR = "section";
 const EXISTING_DECK_SELECTORS = [
   ".deck .slide",
   ".reveal .slides > section",
+  "deck-stage > [data-deck-slide]",
+  "[data-deck-slide]",
   ".remark-slide",
   ".swiper-slide",
   "[data-slide]",
@@ -40,7 +42,7 @@ export function normalizeSelector(selector) {
 }
 
 export function analyzeDeckHtml(html) {
-  const source = String(html ?? "");
+  const source = prepareDeckSource(html).html;
 
   if (hasExistingDeckIndicators(source)) {
     return { mode: "existing-deck" };
@@ -70,7 +72,7 @@ export function analyzeDeckHtml(html) {
 }
 
 export function detectBoundaryMode(html, selector = DEFAULT_SELECTOR) {
-  const source = String(html ?? "");
+  const source = prepareDeckSource(html).html;
   const normalizedSelector = normalizeSelector(selector);
 
   if (hasExistingDeckIndicators(source)) {
@@ -104,12 +106,13 @@ export function extractSlides(html, options = {}) {
   const source = String(html ?? "");
   const selector = normalizeSelector(options.selector);
   const sourceUrl = options.sourceUrl ?? "";
+  const prepared = prepareDeckSource(source);
 
   if (typeof DOMParser !== "undefined") {
-    return extractSlidesWithDom(source, { selector, sourceUrl });
+    return extractSlidesWithDom(prepared.html, { selector, sourceUrl, runtimeSource: prepared.runtimeHtml });
   }
 
-  return extractSlidesWithStrings(source, { selector, sourceUrl });
+  return extractSlidesWithStrings(prepared.html, { selector, sourceUrl, runtimeSource: prepared.runtimeHtml });
 }
 
 export function injectBaseElement(html, sourceUrl) {
@@ -367,7 +370,120 @@ export function getKeyNavigationIntent(key) {
   return "none";
 }
 
-function extractSlidesWithDom(html, { selector, sourceUrl }) {
+function prepareDeckSource(html) {
+  const source = String(html ?? "");
+  return extractBundledStandaloneDeck(source) ?? { html: source, runtimeHtml: source };
+}
+
+function extractBundledStandaloneDeck(html) {
+  const templateText = getBundlerScriptText(html, "__bundler/template");
+  if (!templateText) {
+    return null;
+  }
+
+  let template;
+  try {
+    template = JSON.parse(templateText);
+  } catch {
+    return null;
+  }
+
+  if (!hasBundledDeckSlides(template)) {
+    return null;
+  }
+
+  const templateWithoutRail = addNoRailToDeckStage(template);
+  const manifest = parseBundlerManifest(html);
+
+  return {
+    html: replaceUncompressedManifestAssets(templateWithoutRail, manifest),
+    runtimeHtml: replaceBundlerScriptText(html, "__bundler/template", serializeBundlerScriptJson(templateWithoutRail)),
+  };
+}
+
+function getBundlerScriptText(html, type) {
+  const match = getBundlerScriptPattern(type).exec(String(html ?? ""));
+  return match?.[2] ?? "";
+}
+
+function replaceBundlerScriptText(html, type, nextText) {
+  return String(html ?? "").replace(getBundlerScriptPattern(type), (_match, open, _text, close) => `${open}${nextText}${close}`);
+}
+
+function serializeBundlerScriptJson(value) {
+  return JSON.stringify(value).replaceAll("<", "\\u003C");
+}
+
+function getBundlerScriptPattern(type) {
+  const escapedType = escapeRegExp(type);
+  return new RegExp(
+    `(<script\\b(?=[^>]*\\btype\\s*=\\s*(?:"${escapedType}"|'${escapedType}'))[^>]*>)([\\s\\S]*?)(<\\/script>)`,
+    "i",
+  );
+}
+
+function parseBundlerManifest(html) {
+  const manifestText = getBundlerScriptText(html, "__bundler/manifest");
+  if (!manifestText) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(manifestText);
+  } catch {
+    return {};
+  }
+}
+
+function hasBundledDeckSlides(html) {
+  return /<deck-stage\b/i.test(html) && (html.match(/\bdata-deck-slide(?:\s|=|>)/gi) ?? []).length > 1;
+}
+
+function addNoRailToDeckStage(html) {
+  return String(html ?? "").replace(/<deck-stage\b([^>]*)>/i, (match, attributes = "") => {
+    if (/\sno-rail(?:\s|=|>)/i.test(match)) {
+      return match;
+    }
+
+    return `<deck-stage${attributes} no-rail>`;
+  });
+}
+
+function replaceUncompressedManifestAssets(html, manifest) {
+  let result = String(html ?? "");
+  for (const [id, entry] of Object.entries(manifest ?? {})) {
+    if (!entry || entry.compressed || !entry.mime || !entry.data) {
+      continue;
+    }
+
+    result = replaceAssetUrlReferences(result, id, `data:${entry.mime};base64,${entry.data}`);
+  }
+
+  return result;
+}
+
+function replaceAssetUrlReferences(html, id, dataUrl) {
+  const escapedId = escapeRegExp(id);
+  const urlAttributes = "src|href|poster|data";
+  return String(html ?? "")
+    .replace(
+      new RegExp(`\\b(${urlAttributes})\\s*=\\s*"${escapedId}"`, "gi"),
+      (_match, attribute) => `${attribute}="${dataUrl}"`,
+    )
+    .replace(
+      new RegExp(`\\b(${urlAttributes})\\s*=\\s*'${escapedId}'`, "gi"),
+      (_match, attribute) => `${attribute}='${dataUrl}'`,
+    )
+    .replace(
+      new RegExp(`\\b(${urlAttributes})\\s*=\\s*${escapedId}(?=\\s|>)`, "gi"),
+      (_match, attribute) => `${attribute}="${dataUrl}"`,
+    )
+    .replace(new RegExp(`url\\(\\s*"${escapedId}"\\s*\\)`, "gi"), `url("${dataUrl}")`)
+    .replace(new RegExp(`url\\(\\s*'${escapedId}'\\s*\\)`, "gi"), `url('${dataUrl}')`)
+    .replace(new RegExp(`url\\(\\s*${escapedId}\\s*\\)`, "gi"), `url("${dataUrl}")`);
+}
+
+function extractSlidesWithDom(html, { selector, sourceUrl, runtimeSource }) {
   const parser = new DOMParser();
   const document = parser.parseFromString(html, "text/html");
   const parserError = document.querySelector("parsererror");
@@ -378,6 +494,7 @@ function extractSlidesWithDom(html, { selector, sourceUrl }) {
 
   const headHtml = document.head?.innerHTML ?? "";
   const bodyAttributes = serializeAttributes(document.body);
+  const runtimeHtml = runtimeSource ?? html;
 
   if (hasExistingDeckIndicators(html)) {
     const nodes = getExistingDeckNodes(document);
@@ -396,7 +513,7 @@ function extractSlidesWithDom(html, { selector, sourceUrl }) {
               sourceUrl,
             }),
             runtimeHtml: buildExistingDeckRuntimeDocument({
-              html,
+              html: runtimeHtml,
               index,
               sourceUrl,
             }),
@@ -459,7 +576,7 @@ function extractSlidesWithDom(html, { selector, sourceUrl }) {
       }),
       runtimeHtml: runtimeSlideSelectors
         ? buildRuntimeDocument({
-            html,
+            html: runtimeHtml,
             index,
             sourceUrl,
             slideSelectors: runtimeSlideSelectors,
@@ -472,9 +589,10 @@ function extractSlidesWithDom(html, { selector, sourceUrl }) {
   };
 }
 
-function extractSlidesWithStrings(html, { selector, sourceUrl }) {
+function extractSlidesWithStrings(html, { selector, sourceUrl, runtimeSource }) {
   const headHtml = extractHeadHtml(html);
   const bodyAttributes = extractBodyAttributes(html);
+  const runtimeHtml = runtimeSource ?? html;
 
   if (hasExistingDeckIndicators(html)) {
     const slides = extractExistingDeckSlideStrings(html);
@@ -489,7 +607,7 @@ function extractSlidesWithStrings(html, { selector, sourceUrl }) {
             sourceUrl,
           }),
           runtimeHtml: buildExistingDeckRuntimeDocument({
-            html,
+            html: runtimeHtml,
             index,
             sourceUrl,
           }),
@@ -545,7 +663,7 @@ function extractSlidesWithStrings(html, { selector, sourceUrl }) {
       }),
       runtimeHtml: runtimeSlideSelectors
         ? buildRuntimeDocument({
-            html,
+            html: runtimeHtml,
             index,
             sourceUrl,
             slideSelectors: runtimeSlideSelectors,
@@ -570,7 +688,7 @@ function getExistingDeckNodes(document) {
 }
 
 function isNestedSlideNode(node) {
-  const parentSlide = node.parentElement?.closest(".slide, [data-slide], .remark-slide, .swiper-slide");
+  const parentSlide = node.parentElement?.closest(".slide, [data-slide], [data-deck-slide], .remark-slide, .swiper-slide");
   return Boolean(parentSlide);
 }
 
@@ -660,11 +778,15 @@ function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELEC
   const hideInactiveSlides = ${serializedHideInactiveSlides};
   let restoreTransitionTimer = 0;
   let forwardingNativeNavigation = false;
+  let pendingSlideIndex = targetIndex;
+  let pendingApplyTimer = 0;
+  let pendingApplyAttempts = 0;
+  let slideObserver = null;
 
   function getSlides() {
     for (const selector of slideSelectors) {
       const nodes = Array.from(document.querySelectorAll(selector)).filter((node) => {
-        const parent = node.parentElement?.closest(".slide, [data-slide], .remark-slide, .swiper-slide");
+        const parent = node.parentElement?.closest(".slide, [data-slide], [data-deck-slide], .remark-slide, .swiper-slide");
         return !parent;
       });
       if (nodes.length > 0) return nodes;
@@ -783,12 +905,27 @@ function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELEC
   }
 
   window.tadaSetActiveSlide = function tadaSetActiveSlide(index, options = {}) {
+    pendingSlideIndex = Number.isInteger(index) ? index : pendingSlideIndex;
     const slides = getSlides();
-    const activeIndex = clampSlideIndex(index, slides);
-    if (activeIndex < 0) return;
+    const activeIndex = clampSlideIndex(pendingSlideIndex, slides);
+    if (activeIndex < 0) {
+      schedulePendingApply();
+      return;
+    }
+    pendingApplyAttempts = 0;
+    slideObserver?.disconnect();
     if (!hideInactiveSlides && !options.force && dispatchNativeNavigation(activeIndex, slides)) return;
     forceActiveSlide(activeIndex, slides);
   };
+
+  function schedulePendingApply() {
+    if (pendingApplyTimer || pendingApplyAttempts >= 80) return;
+    pendingApplyTimer = window.setTimeout(() => {
+      pendingApplyTimer = 0;
+      pendingApplyAttempts += 1;
+      window.tadaSetActiveSlide(pendingSlideIndex, { force: true });
+    }, 100);
+  }
 
   function restoreSlideTransitions(slides) {
     clearTimeout(restoreTransitionTimer);
@@ -870,8 +1007,21 @@ function injectRuntimeScript(html, index, { slideSelectors = EXISTING_DECK_SELEC
     window.tadaSetActiveSlide(index);
   });
 
+  try {
+    slideObserver = new MutationObserver(() => {
+      if (getSlides().length > 0) {
+        slideObserver?.disconnect();
+        pendingApplyAttempts = 0;
+        window.tadaSetActiveSlide(pendingSlideIndex, { force: true });
+      }
+    });
+    slideObserver.observe(document, { childList: true, subtree: true });
+  } catch {
+    schedulePendingApply();
+  }
+
   function applyActiveSlide() {
-    window.tadaSetActiveSlide(targetIndex);
+    window.tadaSetActiveSlide(pendingSlideIndex);
   }
 
   applyActiveSlide();
@@ -898,10 +1048,19 @@ function extractExistingDeckSlideStrings(html) {
     }
   }
 
+  for (const selector of ["[data-deck-slide]", "[data-slide]"]) {
+    const slides = extractSimpleSelectorHtml(html, selector).map((slideHtml) => ({
+      html: stripScripts(slideHtml),
+      notes: extractDataNotes(slideHtml),
+    }));
+    if (slides.length > 0) {
+      return slides;
+    }
+  }
+
   const patterns = [
     /<section\b(?=[^>]*\bclass=(["'])[^"']*\bslide\b[^"']*\1)([^>]*)>[\s\S]*?<\/section>/gi,
     /<div\b(?=[^>]*\bclass=(["'])[^"']*(?:\bslide\b|\bremark-slide\b|\bswiper-slide\b)[^"']*\1)([^>]*)>[\s\S]*?<\/div>/gi,
-    /<[^>]+\bdata-slide\b[^>]*>[\s\S]*?<\/[^>]+>/gi,
   ];
 
   for (const pattern of patterns) {
@@ -918,11 +1077,13 @@ function extractExistingDeckSlideStrings(html) {
 }
 
 function hasExistingDeckIndicators(html) {
-  if (hasRevealDeckIndicators(html)) {
+  const source = stripScripts(html);
+
+  if (hasRevealDeckIndicators(source)) {
     return true;
   }
 
-  const tags = extractOpeningTags(html);
+  const tags = extractOpeningTags(source);
 
   for (const tag of tags) {
     const classes = getTagClassTokens(tag);
@@ -933,6 +1094,7 @@ function hasExistingDeckIndicators(html) {
     if (classSet.has("remark-slide")) return true;
     if (classSet.has("swiper-slide")) return true;
     if (classSet.has("notes")) return true;
+    if (hasTagAttribute(tag, "data-deck-slide")) return true;
     if (hasTagAttribute(tag, "data-slide")) return true;
     if (hasTagAttribute(tag, "data-notes")) return true;
   }
@@ -944,7 +1106,7 @@ function hasRevealDeckIndicators(html) {
   let hasRevealRoot = false;
   let hasRevealSlides = false;
 
-  for (const tag of extractOpeningTags(html)) {
+  for (const tag of extractOpeningTags(stripScripts(html))) {
     const classSet = new Set(getTagClassTokens(tag));
     hasRevealRoot ||= classSet.has("reveal");
     hasRevealSlides ||= classSet.has("slides");
@@ -989,11 +1151,13 @@ function selectorMatchesSource(html, selector) {
     }
   }
 
+  const source = stripScripts(html);
+
   return selector
     .split(",")
     .map((part) => part.trim())
     .filter(Boolean)
-    .some((part) => simpleSelectorMatchesSource(html, part));
+    .some((part) => simpleSelectorMatchesSource(source, part));
 }
 
 function simpleSelectorMatchesSource(html, selector) {
