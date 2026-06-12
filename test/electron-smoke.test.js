@@ -283,7 +283,7 @@ async function launchTadaWithPath(deckPath, options = {}) {
       child.kill();
     }
     await waitForProcessExit(child);
-    await rm(root, { force: true, recursive: true });
+    await removeTempRoot(root);
   };
 
   try {
@@ -542,4 +542,25 @@ async function waitForProcessExit(child) {
     child.kill("SIGKILL");
     await new Promise((resolve) => child.once("exit", resolve));
   }
+}
+
+async function removeTempRoot(root) {
+  await waitFor(
+    async () => {
+      try {
+        await rm(root, { force: true, recursive: true });
+        return true;
+      } catch (error) {
+        if (!isRetryableCleanupError(error)) {
+          throw error;
+        }
+        return false;
+      }
+    },
+    { timeoutMs: 5000, intervalMs: 150 },
+  );
+}
+
+function isRetryableCleanupError(error) {
+  return ["EBUSY", "ENOTEMPTY", "EPERM"].includes(error?.code);
 }
