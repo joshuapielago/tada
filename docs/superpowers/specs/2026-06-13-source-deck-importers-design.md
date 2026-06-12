@@ -93,6 +93,71 @@ Cons:
 
 Recommendation: use the hybrid visual-first importer.
 
+## GitHub Landscape And Reusable Components
+
+There does not appear to be one mature open-source project that already does the full Tada-shaped job: source deck in, normalized HTML Deck Bundle out, with CLI, MCP, Drive, upload, viewer isolation, warnings, and share URLs. There are useful pieces, though.
+
+The importer should treat converters as pluggable providers so Tada can start with the most practical provider and swap or combine providers as fidelity improves.
+
+### Best Candidates To Evaluate
+
+`aiden0z/pptx-renderer` is the most promising browser-native PPTX renderer found in the current GitHub pass. It parses OOXML `.pptx` files and renders slides as HTML/SVG DOM, includes model-level text search, exposes ZIP/resource safety limits, and has visual regression claims against PowerPoint output. It is Apache-2.0 and recently active, but still young, so it should be validated against Tada fixtures before becoming the only PPTX path.
+
+Use it for:
+
+- Desktop/Electron PPTX previews.
+- A first local PPTX-to-HTML importer spike.
+- Extracting text/search metadata from parsed PPTX models.
+- Possibly rendering per-slide DOM/SVG into Tada `section` slides.
+
+`hirokisakabe/pptx-glimpse` is a lightweight Node.js PPTX-to-SVG/PNG renderer. It is MIT licensed, recently active, and does not require LibreOffice. It targets SVG/PNG output more than rich editable DOM. It is a good candidate for the snapshot layer, especially in local CLI or worker contexts, but it is also young and should be treated as an evaluation candidate.
+
+Use it for:
+
+- Fast PPTX-to-SVG/PNG import experiments.
+- Local CLI snapshot generation.
+- A fallback provider when semantic DOM is unnecessary.
+
+`gotenberg/gotenberg` is the strongest production-style conversion service candidate. It is a Docker API around document conversion, including Office documents to PDF via LibreOffice, plus Chromium-based HTML/URL/Markdown PDF rendering. It is MIT licensed, widely starred, and operationally mature compared with the pure PPTX renderers.
+
+Use it for:
+
+- Cloud conversion worker proof of concept.
+- PPTX/Office-to-PDF visual fidelity path.
+- A hosted conversion service where managing LibreOffice directly would be fragile.
+
+`unoconv/unoserver` is a lower-level LibreOffice listener/conversion server and replacement direction for `unoconv`. It is MIT licensed and active. It may be useful if Tada wants tighter control than Gotenberg provides, but it pushes more operational responsibility onto us.
+
+Use it for:
+
+- A custom conversion worker if Gotenberg is too large or opinionated.
+- Long-lived LibreOffice conversion where startup cost matters.
+
+`mozilla/pdf.js` is the obvious PDF rendering foundation. It is Apache-2.0, very mature, and can render PDF pages in HTML5 contexts. It fits both direct PDF import and the Office/Google Slides export-to-PDF path.
+
+Use it for:
+
+- PDF page rendering.
+- Optional PDF text-layer extraction.
+- Rendering exported PDFs from Google Slides or Gotenberg into Tada slide assets.
+
+### Reference Only Or Avoid For Now
+
+`meshesha/PPTXjs` and `g21589/PPTX2HTML` are older pure-JavaScript PPTX-to-HTML projects. They prove the category is possible and are MIT licensed, but they are dated, browser-era/jQuery-style projects and do not look like ideal foundations for new Tada code.
+
+`pdf2htmlEX/pdf2htmlEX` has useful PDF-to-HTML fidelity goals, but its license state includes GPL-3.0/unknown signals. Avoid it as an embedded dependency unless legal review approves a process-isolated use case.
+
+`Pr0teus/Power2Reveal` and similar tiny PowerPoint-to-Reveal experiments are useful as prior art only. They are not broad enough to become Tada's importer foundation, and GPL-licensed code should not be copied into Tada.
+
+`PptxGenJS` is strong for generating PowerPoint files, not importing them into HTML. It may be useful later for HTML-to-PPTX export, which is explicitly outside this importer MVP.
+
+### Recommended Evaluation Spikes
+
+1. Run `aiden0z/pptx-renderer` inside the Electron renderer against three PPTX fixtures: simple text/image deck, notes/links deck, and visually complex client-style deck. Decide whether its DOM/SVG output can be wrapped directly as Tada slides.
+2. Run `pptx-glimpse` in Node against the same fixtures and compare SVG/PNG quality, speed, and package/runtime cost.
+3. Run Gotenberg PPTX-to-PDF, then use PDF.js to render each PDF page into Tada slide assets. Compare this against the pure JavaScript renderers for visual fidelity.
+4. Keep `unoserver` as a fallback spike only if Gotenberg's Docker/API shape is too heavy for the intended deployment.
+
 ## Source Support
 
 ### MVP Sources
@@ -407,6 +472,14 @@ The feature is successful when a user can import a local PPTX, a PDF deck, or an
 
 ## References
 
+- aiden0z/pptx-renderer: https://github.com/aiden0z/pptx-renderer
+- hirokisakabe/pptx-glimpse: https://github.com/hirokisakabe/pptx-glimpse
+- gotenberg/gotenberg: https://github.com/gotenberg/gotenberg
+- unoconv/unoserver: https://github.com/unoconv/unoserver
+- mozilla/pdf.js: https://github.com/mozilla/pdf.js
+- meshesha/PPTXjs: https://github.com/meshesha/PPTXjs
+- g21589/PPTX2HTML: https://github.com/g21589/PPTX2HTML
+- pdf2htmlEX/pdf2htmlEX: https://github.com/pdf2htmlEX/pdf2htmlEX
 - Google Drive API `files.export`: https://developers.google.com/workspace/drive/api/reference/rest/v3/files/export
 - Google Drive export MIME types for Workspace documents: https://developers.google.com/workspace/drive/api/guides/ref-export-formats
 - Google Slides API `presentations.pages.getThumbnail`: https://developers.google.com/workspace/slides/api/reference/rest/v1/presentations.pages/getThumbnail
