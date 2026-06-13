@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaDa! — The deck gallery, curated</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Fredoka:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/brand.css">
+<link rel="stylesheet" href="/shared/decks.css">
+<style>
+  :root { --serif: "Fraunces", Georgia, "Times New Roman", serif; }
+  body { background: var(--cream); color: #2c2114; }
+  .masthead { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    padding: 22px clamp(20px, 5vw, 64px); border-bottom: 2px solid #2c2114; }
+  .masthead .l { display: flex; gap: 20px; font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
+  .masthead .l a { color: #7a6a4f; }
+  .masthead .brand { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; text-align: center; letter-spacing: -.01em; }
+  .masthead .brand span { color: var(--coral-deep); }
+  .masthead .r { display: flex; justify-content: flex-end; }
+  .masthead .date { font-size: .8rem; color: #7a6a4f; }
+  @media (max-width: 720px) { .masthead { grid-template-columns: 1fr auto; } .masthead .l { display: none; } }
+
+  .kicker { text-align: center; padding: 14px; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase;
+    color: #7a6a4f; border-bottom: 1px solid #ddcfb0; }
+
+  .feature { display: grid; grid-template-columns: 1.15fr 1fr; gap: clamp(28px, 5vw, 64px);
+    align-items: center; padding: clamp(34px, 5vw, 64px) clamp(20px, 5vw, 64px); border-bottom: 1px solid #ddcfb0; }
+  .feature .ey { font-family: var(--font-ui); font-weight: 700; font-size: .78rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--coral-deep); }
+  .feature h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(2.4rem, 5vw, 4.2rem);
+    line-height: 1; letter-spacing: -.02em; margin: 16px 0 0; }
+  .feature .lede { font-family: var(--serif); font-size: clamp(1.1rem, 1.6vw, 1.5rem); font-weight: 400;
+    line-height: 1.4; color: #4a3c28; margin: 20px 0 0; max-width: 40ch; }
+  .feature .byline { margin: 22px 0 0; font-size: .9rem; color: #7a6a4f; }
+  .feature .byline b { color: #2c2114; }
+  .feature .cta { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .feature .art { position: relative; }
+  .feature .art .deck-slide { box-shadow: 0 30px 70px rgb(44 33 20 / 22%); transform: rotate(1.5deg); border-radius: 8px; }
+  .feature .art figcaption { text-align: center; font-style: italic; font-family: var(--serif); color: #7a6a4f; margin-top: 14px; font-size: .92rem; }
+  @media (max-width: 860px) { .feature { grid-template-columns: 1fr; } }
+
+  .col-head { display: flex; align-items: baseline; gap: 12px; padding: 0 clamp(20px, 5vw, 64px); margin: 40px 0 8px; }
+  .col-head h2 { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; margin: 0; }
+  .col-head .rule { flex: 1; height: 1px; background: #ddcfb0; }
+  .col-head a { font-size: .82rem; font-weight: 600; color: var(--coral-deep); white-space: nowrap; }
+
+  .collection { padding: 8px clamp(20px, 5vw, 64px) 10px; }
+  .collection .note { font-family: var(--serif); font-style: italic; color: #6a5a3e; max-width: 60ch; margin: 0 0 18px; font-size: 1.05rem; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  @media (max-width: 820px) { .row3 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 540px) { .row3 { grid-template-columns: 1fr; } }
+  /* warm up the card meta for this theme */
+  .collection .deck-info b, .feature .byline b { color: #2c2114; }
+
+  .signup { margin: 50px clamp(20px, 5vw, 64px); padding: clamp(28px, 4vw, 48px); text-align: center;
+    border: 2px solid #2c2114; border-radius: 6px; background: #fffdf6; }
+  .signup h3 { font-family: var(--serif); font-size: clamp(1.6rem, 3vw, 2.4rem); margin: 0 0 8px; font-weight: 600; }
+  .signup p { color: #6a5a3e; margin: 0 0 22px; }
+  footer { padding: 40px clamp(20px, 5vw, 64px); border-top: 2px solid #2c2114; font-size: .85rem; color: #7a6a4f;
+    display: flex; gap: 12px; flex-wrap: wrap; }
+  footer .spacer { margin-left: auto; }
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <nav class="l"><a href="#">Daily</a><a href="#">Collections</a><a href="#">Makers</a></nav>
+    <div class="brand">Ta<span>Da!</span></div>
+    <div class="r"><button class="tada-upload" style="padding:11px 20px;font-size:.95rem"><span class="wand">✦</span> Submit a deck</button></div>
+  </header>
+  <div class="kicker">A daily gallery of the most beautiful HTML decks — curated by humans</div>
+
+  <article class="feature">
+    <div>
+      <div class="ey">Deck of the day · {{date}}</div>
+      <h1 id="fTitle"></h1>
+      <p class="lede" id="fLede"></p>
+      <p class="byline">By <b id="fAuthor"></b> · pinned because the typography and restraint are simply lovely.</p>
+      <div class="cta">
+        <a class="tada-ghost" href="#">Open the deck →</a>
+        <button class="tada-upload"><span class="wand">✦</span> Pin yours next</button>
+      </div>
+    </div>
+    <figure class="art">
+      <div class="deck-slide" id="fArt"></div>
+      <figcaption>Made entirely in a single .html file.</figcaption>
+    </figure>
+  </article>
+
+  <div class="col-head"><h2>The Editors' Picks</h2><span class="rule"></span><a href="#">See all 12,400 →</a></div>
+  <section class="collection">
+    <p class="note">A rotating shortlist of decks we keep coming back to — pitches that close, reports you'd actually read, brand books with soul.</p>
+    <div class="row3" id="picks"></div>
+  </section>
+
+  <div class="col-head"><h2>Collection · Founders &amp; Pitches</h2><span class="rule"></span><a href="#">Follow →</a></div>
+  <section class="collection"><div class="row3" id="coll2"></div></section>
+
+  <div class="col-head"><h2>Collection · Studios &amp; Brand</h2><span class="rule"></span><a href="#">Follow →</a></div>
+  <section class="collection"><div class="row3" id="coll3"></div></section>
+
+  <section class="signup">
+    <h3>Have a deck this good?</h3>
+    <p>Drop the HTML — it's live and shareable in seconds. No editor, no export, no fuss.</p>
+    <button class="tada-upload" style="margin:0 auto"><span class="wand">✦</span> Upload your deck</button>
+  </section>
+
+  <footer>
+    <div class="brand" style="font-family:var(--serif);font-size:1.2rem;font-weight:600">Ta<span style="color:var(--coral-deep)">Da!</span></div>
+    <span class="spacer"></span><span>Curated with care · practical.ai/data</span>
+  </footer>
+
+<script src="/shared/decks.js"></script>
+<script>
+  var T = window.TADA;
+  var feat = T.byId("mono");
+  document.getElementById("fTitle").textContent = feat.title;
+  document.getElementById("fLede").textContent = "A complete identity system that proves a brand book can be quiet, confident, and beautiful — all in one HTML page.";
+  document.getElementById("fAuthor").textContent = feat.author;
+  document.getElementById("fArt").innerHTML = T.renderDeck(feat);
+  var d = new Date();
+  document.querySelector(".feature .ey").textContent =
+    "Deck of the day · " + d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  document.querySelector(".masthead .r").insertAdjacentHTML("afterbegin",
+    '<span class="date" style="margin-right:14px;align-self:center">' + d.toLocaleDateString("en-US", { weekday: "long" }) + "</span>");
+
+  function fill(id, arr) {
+    document.getElementById(id).innerHTML = arr.map(function (x) { return T.renderCard(T.byId(x)); }).join("");
+  }
+  fill("picks", ["kinfolk", "calm", "aria"]);
+  fill("coll2", ["seed", "growth", "lunar"]);
+  fill("coll3", ["tempo", "harvest", "north"]);
+</script>
+</body>
+</html>

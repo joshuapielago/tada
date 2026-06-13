@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaDa! — Present any HTML, beautifully</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/brand.css">
+<link rel="stylesheet" href="/shared/decks.css">
+<style>
+  body { background: var(--paper); }
+  .nav { display: flex; align-items: center; padding: 24px clamp(20px, 5vw, 56px); max-width: 1100px; margin: 0 auto; }
+  .nav .right { margin-left: auto; display: flex; gap: 14px; align-items: center; }
+  .nav .right a { font-weight: 600; color: var(--ink-soft); font-size: .92rem; }
+
+  .hero { max-width: 880px; margin: 0 auto; text-align: center; padding: clamp(48px, 9vw, 110px) 20px clamp(28px, 4vw, 44px); }
+  .hero .ey { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .85rem;
+    color: var(--ink-soft); letter-spacing: .02em; }
+  .hero .ey b { color: var(--coral-deep); }
+  .hero h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -.035em;
+    font-size: clamp(2.8rem, 8vw, 5.6rem); line-height: .95; margin: 22px 0 0; }
+  .hero h1 .g { background: linear-gradient(115deg, var(--coral), var(--violet) 70%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { font-size: clamp(1.1rem, 1.7vw, 1.4rem); color: var(--ink-soft); line-height: 1.5; margin: 26px auto 0; max-width: 50ch; }
+  .hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
+  .hero .tiny { margin-top: 18px; font-size: .85rem; color: var(--ink-soft); }
+
+  .showcase { max-width: 980px; margin: 10px auto 0; padding: 0 20px; }
+  .showcase .frame { border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-lg);
+    border: 1px solid var(--line); }
+  .showcase .frame .deck-slide { border-radius: 0; }
+  .dots { display: flex; gap: 9px; justify-content: center; margin-top: 22px; }
+  .dots button { width: 9px; height: 9px; border-radius: 50%; border: 0; background: var(--line); cursor: pointer; padding: 0; transition: all .2s; }
+  .dots button.on { background: var(--coral); width: 26px; border-radius: 99px; }
+
+  .strip { max-width: 1100px; margin: 64px auto 0; padding: 0 clamp(20px, 5vw, 56px); }
+  .strip .lab { text-align: center; color: var(--ink-soft); font-size: .85rem; letter-spacing: .12em;
+    text-transform: uppercase; font-weight: 700; margin-bottom: 26px; }
+  .strip .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  @media (max-width: 820px) { .strip .row { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 460px) { .strip .row { grid-template-columns: 1fr; } }
+
+  .end { text-align: center; padding: clamp(60px, 9vw, 110px) 20px; }
+  .end h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.02em; margin: 0 0 22px; }
+  footer { text-align: center; padding: 30px; color: var(--ink-soft); font-size: .86rem; border-top: 1px solid var(--line-soft); }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="tada-wordmark"><span class="tada-logo">✦</span> TaDa!</div>
+    <div class="right"><a href="#">Gallery</a><a href="#">Sign in</a>
+      <button class="tada-upload" style="padding:11px 20px;font-size:.95rem"><span class="wand">✦</span> Upload</button></div>
+  </nav>
+
+  <header class="hero">
+    <div class="ey">✦ <b>The home for HTML decks</b></div>
+    <h1>One file in.<br>A <span class="g">beautiful deck</span> out.</h1>
+    <p>Drop any HTML and TaDa! presents it like a polished slide show. Browse the most beautiful decks in the world for inspiration — then add your own.</p>
+    <div class="cta">
+      <button class="tada-upload"><span class="wand">✦</span> Upload your deck</button>
+      <a class="tada-ghost" href="#">Browse the gallery</a>
+    </div>
+    <div class="tiny">No sign-up to try · sections become slides automatically</div>
+  </header>
+
+  <section class="showcase">
+    <div class="frame"><div class="deck-slide" id="show"></div></div>
+    <div class="dots" id="dots"></div>
+  </section>
+
+  <section class="strip">
+    <div class="lab">Loved by makers around the world</div>
+    <div class="row" id="row"></div>
+  </section>
+
+  <section class="end">
+    <h2>Got an .html? You've got a deck.</h2>
+    <button class="tada-upload" style="margin:0 auto"><span class="wand">✦</span> Upload your deck</button>
+  </section>
+  <footer>Drop HTML. Cue the show. · practical.ai/data</footer>
+
+<script src="/shared/decks.js"></script>
+<script>
+  var T = window.TADA;
+  var reel = ["calm", "mono", "kinfolk", "lunar", "north"];
+  var show = document.getElementById("show");
+  var dots = document.getElementById("dots");
+  var i = 0, timer;
+  function go(n) {
+    i = (n + reel.length) % reel.length;
+    show.innerHTML = T.renderDeck(T.byId(reel[i]));
+    [].forEach.call(dots.children, function (b, k) { b.classList.toggle("on", k === i); });
+  }
+  reel.forEach(function (_, k) {
+    var b = document.createElement("button");
+    b.onclick = function () { go(k); restart(); };
+    dots.appendChild(b);
+  });
+  function restart() { clearInterval(timer); timer = setInterval(function () { go(i + 1); }, 3200); }
+  go(0); restart();
+
+  document.getElementById("row").innerHTML =
+    ["seed", "aria", "growth", "harvest"].map(function (id) { return T.renderCard(T.byId(id)); }).join("");
+</script>
+</body>
+</html>

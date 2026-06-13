@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaDa! — Beautiful decks, live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/brand.css">
+<link rel="stylesheet" href="/shared/decks.css">
+<style>
+  body { background: radial-gradient(120% 80% at 80% -10%, #fff3ef 0%, transparent 55%), var(--paper); }
+  .nav {
+    position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 18px;
+    padding: 16px clamp(20px, 5vw, 56px); backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--paper) 78%, transparent); border-bottom: 1px solid var(--line-soft);
+  }
+  .nav .links { display: flex; gap: 22px; margin-left: 20px; }
+  .nav .links a { font-weight: 600; font-size: .92rem; color: var(--ink-soft); }
+  .nav .links a:hover { color: var(--ink); }
+  .nav .right { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  @media (max-width: 720px) { .nav .links { display: none; } }
+
+  .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(24px, 5vw, 70px);
+    align-items: center; padding: clamp(36px, 6vw, 80px) clamp(20px, 5vw, 56px) clamp(20px, 4vw, 40px); }
+  .hero h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -.03em;
+    font-size: clamp(2.6rem, 6vw, 4.6rem); line-height: .98; margin: 0; }
+  .hero h1 .pop { background: linear-gradient(120deg, var(--coral), var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { font-size: clamp(1.05rem, 1.5vw, 1.3rem); color: var(--ink-soft); max-width: 42ch; margin: 22px 0 28px; line-height: 1.45; }
+  .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .hero .meta { margin-top: 22px; font-size: .9rem; color: var(--ink-soft); }
+  .hero .meta b { color: var(--ink); }
+
+  .stage-art { position: relative; min-height: 360px; }
+  .stage-art .big { position: relative; z-index: 2; transform: rotate(-3deg); }
+  .stage-art .float {
+    position: absolute; width: 42%; z-index: 3; box-shadow: var(--shadow-lg); border-radius: var(--r-md);
+    animation: bob 6s ease-in-out infinite;
+  }
+  .stage-art .f1 { right: -6%; top: -8%; transform: rotate(6deg); }
+  .stage-art .f2 { left: -8%; bottom: -6%; transform: rotate(-7deg); animation-delay: -2s; }
+  @keyframes bob { 50% { transform: translateY(-12px) rotate(var(--r, 0deg)); } }
+  .stage-art .f1 { --r: 6deg; }
+  .stage-art .f2 { --r: -7deg; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } .stage-art { display: none; } }
+
+  .section-head { display: flex; align-items: baseline; gap: 14px; padding: 0 clamp(20px, 5vw, 56px); margin-top: 30px; }
+  .section-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; margin: 0; }
+  .section-head span { color: var(--ink-soft); font-size: .92rem; }
+
+  .chips { display: flex; gap: 9px; flex-wrap: wrap; padding: 16px clamp(20px, 5vw, 56px) 4px; }
+  .chip { padding: 8px 16px; border-radius: var(--r-pill); border: 1.5px solid var(--line);
+    background: var(--paper); font-weight: 600; font-size: .86rem; cursor: pointer; color: var(--ink-soft); transition: all .14s; }
+  .chip:hover { border-color: var(--coral); color: var(--ink); }
+  .chip.active { background: var(--night); border-color: var(--night); color: var(--paper); }
+
+  .wall { columns: 4 250px; column-gap: 22px; padding: 20px clamp(20px, 5vw, 56px) 70px; }
+  .wall .deck-card { break-inside: avoid; margin-bottom: 26px; }
+
+  footer { padding: 40px clamp(20px, 5vw, 56px) 60px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: .9rem;
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  footer .tada-wordmark { font-size: 1.1rem; }
+  footer .spacer { margin-left: auto; }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="tada-wordmark"><span class="tada-logo">✦</span> TaDa!</div>
+    <div class="links"><a href="#">Explore</a><a href="#">Collections</a><a href="#">Pin a deck</a></div>
+    <div class="right"><a class="tada-ghost" href="#">Sign in</a><button class="tada-upload"><span class="wand">✦</span> Upload deck</button></div>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <h1>Where the world's <span class="pop">most beautiful decks</span> live.</h1>
+      <p>TaDa! turns any HTML file into a gorgeous, shareable presentation — and gathers the best ones, in one place, for inspiration.</p>
+      <div class="cta">
+        <button class="tada-upload"><span class="wand">✦</span> Upload your deck</button>
+        <a class="tada-ghost" href="#">Browse the gallery</a>
+      </div>
+      <p class="meta"><b>12,400+</b> decks pinned · <b>free</b> to share · drop an <b>.html</b> and you're live</p>
+    </div>
+    <div class="stage-art" id="art"></div>
+  </header>
+
+  <div class="section-head"><h2>Trending today</h2><span>Hand-picked, refreshed every morning</span></div>
+  <div class="chips" id="chips"></div>
+  <div class="wall" id="wall"></div>
+
+  <footer>
+    <div class="tada-wordmark"><span class="tada-logo">✦</span> TaDa!</div>
+    <span class="spacer"></span>
+    <span>Drop HTML. Cue the show. · practical.ai/data</span>
+  </footer>
+
+<script src="/shared/decks.js"></script>
+<script>
+  var T = window.TADA;
+  // hero art: one big featured deck + two floating
+  var art = document.getElementById("art");
+  art.innerHTML =
+    '<div class="deck-slide big">' + T.renderDeck(T.byId("calm")) + "</div>" +
+    '<div class="deck-slide float f1">' + T.renderDeck(T.byId("seed")) + "</div>" +
+    '<div class="deck-slide float f2">' + T.renderDeck(T.byId("kinfolk")) + "</div>";
+
+  // category chips
+  var chips = document.getElementById("chips");
+  var cats = ["All", "Pitch", "Product", "Report", "Brand", "Portfolio", "Editorial", "Keynote", "Travel", "Event"];
+  cats.forEach(function (c, i) {
+    var b = document.createElement("button");
+    b.className = "chip" + (i === 0 ? " active" : "");
+    b.textContent = c;
+    b.onclick = function () {
+      [].forEach.call(chips.children, function (x) { x.classList.remove("active"); });
+      b.classList.add("active");
+      draw(c);
+    };
+    chips.appendChild(b);
+  });
+
+  var wall = document.getElementById("wall");
+  function draw(cat) {
+    var list = cat && cat !== "All" ? T.decks.filter(function (d) { return d.category === cat; }) : T.decks;
+    if (!list.length) list = T.decks;
+    wall.innerHTML = list.map(function (d) { return T.renderCard(d); }).join("");
+  }
+  draw("All");
+</script>
+</body>
+</html>

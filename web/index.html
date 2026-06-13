@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaDa! — Homepage Prototypes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/brand.css">
+<style>
+  body { background: #f6f4f1; }
+  .wrap { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+  .rail {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 28px 22px; background: var(--paper); border-right: 1px solid var(--line);
+  }
+  .rail h1 { font-family: var(--font-display); font-size: 1.15rem; margin: 14px 0 2px; }
+  .rail .tag { color: var(--ink-soft); font-size: .82rem; margin: 0 0 22px; }
+  .proto-list { display: grid; gap: 8px; }
+  .proto-btn {
+    display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: center;
+    padding: 12px 14px; border: 1.5px solid transparent; border-radius: 14px;
+    background: #faf8f6; cursor: pointer; text-align: left; width: 100%; font: inherit;
+    transition: border-color .15s, background .15s;
+  }
+  .proto-btn:hover { background: #fff; border-color: var(--line); }
+  .proto-btn.active { background: #fff; border-color: var(--coral); box-shadow: var(--shadow-sm); }
+  .proto-num {
+    display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
+    background: var(--night); color: var(--yellow); font-family: var(--font-display); font-weight: 600;
+  }
+  .proto-btn.active .proto-num { background: var(--coral); color: #fff; }
+  .proto-name { font-family: var(--font-display); font-weight: 600; font-size: .98rem; }
+  .proto-desc { color: var(--ink-soft); font-size: .78rem; line-height: 1.3; margin-top: 1px; }
+  .rail .open { display: inline-block; margin-top: 18px; font-size: .82rem; color: var(--coral-deep); font-weight: 600; }
+  .stage { position: relative; padding: 22px; }
+  .frame-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .frame-bar .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .frame-bar .ttl { margin-left: 8px; font-family: var(--font-display); font-weight: 600; }
+  .frame-bar a { margin-left: auto; font-size: .84rem; font-weight: 600; color: var(--ink-soft); }
+  .frame-bar a:hover { color: var(--coral); }
+  .viewport {
+    height: calc(100vh - 90px); border-radius: 18px; overflow: hidden;
+    border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow-md);
+  }
+  iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .note { padding: 10px 14px; margin-top: 12px; font-size: .8rem; color: var(--ink-soft); }
+  @media (max-width: 820px) { .wrap { grid-template-columns: 1fr; } .rail { position: static; height: auto; } .viewport { height: 70vh; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="rail">
+    <div class="tada-wordmark"><span class="tada-logo">✦</span> TaDa!</div>
+    <h1>Homepage prototypes</h1>
+    <p class="tag">Six directions for the new web platform — a home for beautiful HTML decks. Click to preview.</p>
+    <div class="proto-list" id="list"></div>
+    <a class="open" id="openNew" href="#" target="_blank">Open this one full-screen ↗</a>
+    <p class="note">Every deck in the wall is rendered live as a real HTML slide — that's the product.</p>
+  </aside>
+  <main class="stage">
+    <div class="frame-bar">
+      <span class="dot" style="background:#ff5f57"></span>
+      <span class="dot" style="background:#febc2e"></span>
+      <span class="dot" style="background:#28c840"></span>
+      <span class="ttl" id="ttl">Spotlight Gallery</span>
+      <a id="openNew2" href="#" target="_blank">Open ↗</a>
+    </div>
+    <div class="viewport"><iframe id="frame" title="Prototype preview" src="/01-spotlight/"></iframe></div>
+  </main>
+</div>
+<script>
+  var protos = [
+    { id: "01-spotlight", name: "Spotlight Gallery", desc: "Big featured deck + airy Pinterest-style wall." },
+    { id: "02-magic-drop", name: "Magic Drop", desc: "Upload-first. Giant friendly drop zone, wand & confetti." },
+    { id: "03-editorial", name: "Editorial Curated", desc: "Magazine feel. Deck of the day, hand-picked collections." },
+    { id: "04-mosaic", name: "Living Mosaic", desc: "Immersive auto-scrolling wall behind a glassy hero." },
+    { id: "05-bento", name: "Playful Bento", desc: "Modern bento grid mixing hero, upload & featured decks." },
+    { id: "06-minimal", name: "Quiet Light", desc: "Ultra-clean, one big idea, one beautiful carousel." },
+  ];
+  var list = document.getElementById("list");
+  var frame = document.getElementById("frame");
+  var ttl = document.getElementById("ttl");
+  var active = "01-spotlight";
+  function pick(id) {
+    active = id;
+    frame.src = "/" + id + "/";
+    var p = protos.filter(function (x) { return x.id === id; })[0];
+    ttl.textContent = p.name;
+    document.getElementById("openNew").href = "/" + id + "/";
+    document.getElementById("openNew2").href = "/" + id + "/";
+    [].forEach.call(document.querySelectorAll(".proto-btn"), function (b) {
+      b.classList.toggle("active", b.dataset.id === id);
+    });
+  }
+  protos.forEach(function (p, i) {
+    var b = document.createElement("button");
+    b.className = "proto-btn" + (i === 0 ? " active" : "");
+    b.dataset.id = p.id;
+    b.innerHTML = '<span class="proto-num">' + (i + 1) + '</span><span><span class="proto-name">' +
+      p.name + '</span><span class="proto-desc">' + p.desc + "</span></span>";
+    b.onclick = function () { pick(p.id); };
+    list.appendChild(b);
+  });
+  pick("01-spotlight");
+</script>
+</body>
+</html>

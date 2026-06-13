@@ -1,0 +1,207 @@
+/* Deck slide + gallery card styling.
+ * .deck-slide is a 16:9 container-query context; every measurement inside a
+ * slide is in cqw, so the same markup renders perfectly as a tiny thumbnail
+ * or a huge hero. Shared by all prototypes. */
+
+.deck-slide {
+  container-type: inline-size;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: var(--paper);
+}
+
+.ds {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 7cqw;
+  overflow: hidden;
+  font-family: var(--font-display);
+  isolation: isolate;
+}
+.ds-grow { flex: 1; }
+.ds-dot { position: absolute; border-radius: 50%; opacity: .9; z-index: 0; }
+.ds > * { position: relative; z-index: 1; }
+
+.ds-eyebrow {
+  font-family: var(--font-ui);
+  font-size: 3cqw;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.ds-title {
+  margin: 1.5cqw 0 0;
+  font-size: 9.5cqw;
+  font-weight: 700;
+  line-height: .98;
+  letter-spacing: -.02em;
+}
+.ds-title.sm { font-size: 7.5cqw; }
+.ds-title.xs { font-size: 5.5cqw; }
+.ds-sub {
+  margin: 2.5cqw 0 0;
+  font-family: var(--font-ui);
+  font-size: 3.6cqw;
+  font-weight: 600;
+  color: var(--soft);
+  line-height: 1.25;
+}
+
+.ds-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: auto;
+  padding-top: 3cqw;
+  font-family: var(--font-ui);
+  font-size: 3cqw;
+}
+.ds-by { font-weight: 700; color: var(--soft); }
+.ds-pg { font-weight: 700; color: var(--accent); }
+
+/* stat */
+.ds-statwrap { margin: auto 0; }
+.ds-stat { font-size: 26cqw; line-height: .9; font-weight: 700; letter-spacing: -.03em; }
+.ds-statlabel {
+  margin-top: 1cqw;
+  max-width: 70%;
+  font-family: var(--font-ui);
+  font-size: 3.4cqw;
+  font-weight: 600;
+  color: var(--soft);
+  line-height: 1.2;
+}
+
+/* bars */
+.ds-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.2cqw;
+  height: 26cqw;
+  margin-top: 3cqw;
+}
+.ds-bars span { flex: 1; border-radius: 1.4cqw 1.4cqw 0 0; min-height: 4%; }
+.ds-legend {
+  display: flex;
+  align-items: center;
+  gap: 1.6cqw;
+  margin-top: 3cqw;
+  font-family: var(--font-ui);
+  font-size: 2.7cqw;
+  font-weight: 600;
+  color: var(--soft);
+}
+.ds-legend span { width: 3cqw; height: 3cqw; border-radius: 50%; }
+.ds-legend span:nth-of-type(2) { margin-left: 3cqw; }
+
+/* quote */
+.ds-mark { font-size: 22cqw; line-height: .6; height: 9cqw; }
+.ds-quote {
+  margin: 1cqw 0 0;
+  font-size: 7cqw;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+}
+
+/* grid */
+.ds-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.4cqw;
+  flex: 1;
+  margin-top: 3cqw;
+}
+.ds-grid span {
+  display: grid;
+  place-items: center;
+  border-radius: 2.6cqw;
+  font-size: 8cqw;
+  font-weight: 700;
+  color: var(--paper);
+}
+.ds-light .ds-grid span:nth-child(2),
+.ds-light .ds-grid span:nth-child(4) { color: var(--ink); }
+.ds-grid span:last-child { border: .8cqw solid currentColor; color: var(--accent); }
+
+/* agenda */
+.ds-agenda { list-style: none; margin: 3cqw 0 0; padding: 0; flex: 1; }
+.ds-agenda li {
+  display: flex;
+  align-items: center;
+  gap: 3cqw;
+  padding: 2.1cqw 0;
+  border-top: .4cqw solid color-mix(in srgb, currentColor 12%, transparent);
+  font-family: var(--font-ui);
+  font-size: 4cqw;
+  font-weight: 600;
+}
+.ds-agenda li:last-child { border-bottom: .4cqw solid color-mix(in srgb, currentColor 12%, transparent); }
+.ds-agenda b { font-family: var(--font-display); font-size: 4.6cqw; }
+
+/* photo */
+.ds-photo { position: absolute; inset: 0; z-index: 0; }
+.ds-shape {
+  position: absolute;
+  right: -8cqw;
+  bottom: -8cqw;
+  width: 38cqw;
+  height: 38cqw;
+  border-radius: 50%;
+  opacity: .5;
+  mix-blend-mode: screen;
+}
+.ds-cap {
+  position: absolute;
+  left: 7cqw;
+  right: 7cqw;
+  bottom: 7cqw;
+  z-index: 2;
+  color: var(--paper);
+  text-shadow: 0 2cqw 6cqw rgb(0 0 0 / 35%);
+}
+.ds-cap .ds-eyebrow { color: var(--paper) !important; opacity: .92; }
+
+/* ---- gallery card wrapper ------------------------------------------- */
+.deck-card {
+  display: block;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  cursor: pointer;
+  transition: transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease;
+}
+.deck-card .deck-slide {
+  box-shadow: var(--shadow-md);
+  transition: box-shadow .22s ease;
+}
+.deck-card:hover { transform: translateY(-6px); }
+.deck-card:hover .deck-slide { box-shadow: var(--shadow-lg); }
+
+.deck-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 4px 2px;
+}
+.deck-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: .72rem;
+  font-weight: 600;
+}
+.deck-info { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.deck-info b { font-size: .9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.deck-info i { font-style: normal; font-size: .78rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.deck-likes { margin-left: auto; flex: 0 0 auto; font-size: .8rem; font-weight: 600; color: var(--ink-soft); }

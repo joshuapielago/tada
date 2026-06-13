@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaDa! — A living wall of decks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/brand.css">
+<link rel="stylesheet" href="/shared/decks.css">
+<style>
+  body { background: var(--night); color: var(--paper); overflow-x: hidden; }
+  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 60; display: flex; align-items: center; gap: 16px;
+    padding: 16px clamp(20px, 5vw, 56px); }
+  .nav .tada-wordmark { color: var(--paper); }
+  .nav .tada-logo { background: rgba(255,255,255,.1); }
+  .nav .right { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .nav .right a { color: rgba(255,253,253,.78); font-weight: 600; font-size: .92rem; }
+
+  /* the immersive wall */
+  .wall { position: relative; min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    gap: clamp(14px, 1.6vw, 22px); padding: 80px 0; overflow: hidden; }
+  .marquee { display: flex; gap: clamp(14px, 1.6vw, 22px); width: max-content; }
+  .row-a { animation: scrollL 60s linear infinite; }
+  .row-b { animation: scrollR 72s linear infinite; }
+  .row-c { animation: scrollL 84s linear infinite; }
+  @keyframes scrollL { to { transform: translateX(-50%); } }
+  @keyframes scrollR { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+  .marquee .deck-slide { width: clamp(220px, 24vw, 340px); flex: 0 0 auto; border-radius: 14px;
+    box-shadow: 0 20px 50px rgb(0 0 0 / 45%); }
+  .wall:hover .marquee { animation-play-state: paused; }
+
+  /* dark scrim + glass hero */
+  .scrim { position: absolute; inset: 0; z-index: 5; pointer-events: none;
+    background: radial-gradient(75% 60% at 50% 50%, rgb(23 13 36 / 78%) 0%, rgb(23 13 36 / 38%) 55%, rgb(23 13 36 / .86) 100%); }
+  .hero { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; }
+  .glass { width: min(680px, 92vw); text-align: center; padding: clamp(30px, 5vw, 52px);
+    border: 1px solid rgba(255,253,253,.16); border-radius: var(--r-lg);
+    background: rgba(38,24,51,.55); backdrop-filter: blur(18px) saturate(1.1);
+    box-shadow: 0 40px 100px rgb(0 0 0 / 50%); }
+  .glass .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 15px; border-radius: var(--r-pill);
+    background: rgba(255,253,253,.1); border: 1px solid rgba(255,253,253,.18); font-weight: 600; font-size: .82rem; color: var(--yellow); }
+  .glass h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -.03em; margin: 20px 0 0;
+    font-size: clamp(2.3rem, 5.5vw, 4rem); line-height: .98; }
+  .glass h1 em { font-style: normal; background: linear-gradient(120deg, var(--yellow), var(--coral) 55%, var(--violet));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .glass p { color: rgba(255,253,253,.76); font-size: clamp(1rem, 1.5vw, 1.2rem); margin: 16px auto 0; max-width: 44ch; line-height: 1.45; }
+  .glass .search { display: flex; gap: 8px; margin: 26px auto 0; max-width: 440px; }
+  .glass .search input { flex: 1; padding: 14px 18px; border-radius: var(--r-pill); border: 1px solid rgba(255,253,253,.2);
+    background: rgba(255,253,253,.08); color: var(--paper); font: inherit; outline: none; }
+  .glass .search input::placeholder { color: rgba(255,253,253,.5); }
+  .glass .search input:focus { border-color: var(--coral); background: rgba(255,253,253,.12); }
+  .glass .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .glass .tada-ghost { background: rgba(255,253,253,.08); border-color: rgba(255,253,253,.2); color: var(--paper); }
+  .glass .tada-ghost:hover { border-color: var(--coral); }
+  .glass .stat { margin-top: 22px; font-size: .85rem; color: rgba(255,253,253,.6); }
+
+  .scroll-hint { position: absolute; bottom: 22px; left: 0; right: 0; z-index: 11; text-align: center;
+    color: rgba(255,253,253,.55); font-size: .82rem; }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="tada-wordmark"><span class="tada-logo">✦</span> TaDa!</div>
+    <div class="right"><a href="#">Explore</a><a href="#">Sign in</a>
+      <button class="tada-upload" style="padding:11px 20px;font-size:.95rem"><span class="wand">✦</span> Upload</button></div>
+  </nav>
+
+  <section class="wall">
+    <div class="marquee row-a" id="rowA"></div>
+    <div class="marquee row-b" id="rowB"></div>
+    <div class="marquee row-c" id="rowC"></div>
+    <div class="scrim"></div>
+    <div class="hero">
+      <div class="glass">
+        <span class="pill">✦ 12,400 beautiful decks and counting</span>
+        <h1>Every deck here<br>began as <em>plain HTML</em>.</h1>
+        <p>Browse the most beautiful presentations on the web — then drop your own file and join the wall.</p>
+        <div class="search"><input type="text" placeholder="Search pitches, brands, reports…" aria-label="Search decks"></div>
+        <div class="cta">
+          <button class="tada-upload"><span class="wand">✦</span> Upload your deck</button>
+          <a class="tada-ghost" href="#">Surprise me</a>
+        </div>
+        <p class="stat">Free to share · sections become slides automatically</p>
+      </div>
+    </div>
+    <div class="scroll-hint">Hover to pause · the whole wall is live HTML</div>
+  </section>
+
+<script src="/shared/decks.js"></script>
+<script>
+  var T = window.TADA;
+  function slides(list) { return list.map(function (d) { return '<div class="deck-slide">' + T.renderDeck(d) + "</div>"; }).join(""); }
+  // duplicate each row's content so the -50% loop is seamless
+  var a = T.decks.slice(0, 5), b = T.decks.slice(5, 10), c = T.decks.slice(9).concat(T.decks.slice(0, 4));
+  document.getElementById("rowA").innerHTML = slides(a) + slides(a);
+  document.getElementById("rowB").innerHTML = slides(b) + slides(b);
+  document.getElementById("rowC").innerHTML = slides(c) + slides(c);
+</script>
+</body>
+</html>
