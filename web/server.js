@@ -70,7 +70,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   const base = `http://localhost:${PORT}`;
   console.log(`\n  TaDa! homepage prototypes — running\n  ${base}\n`);
   console.log("  Launcher (all prototypes):  " + base + "/");
