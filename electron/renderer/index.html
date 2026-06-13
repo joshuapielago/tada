@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http: https:; frame-src 'self' about: data: blob: tada-slide:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    >
+    <title>tada</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="toolbar" aria-label="Presentation controls">
+        <div class="title-lockup">
+          <strong>tada</strong>
+          <span id="sourceLabel">No deck loaded</span>
+        </div>
+
+        <form class="source-form" id="sourceForm">
+          <input
+            id="sourceInput"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="URL, localhost URL, file:// URL, or local path"
+            aria-label="Source URL or path"
+          >
+          <button class="button primary" id="loadSourceButton" type="submit">Load</button>
+        </form>
+
+        <div class="toolbar-actions">
+          <button class="button primary" id="presentButton" type="button" title="Start presentation">Present</button>
+          <button class="button" id="openButton" type="button" title="Open HTML file">Open</button>
+          <button class="button" id="exportShowButton" type="button" title="Export standalone tada show">Export</button>
+          <button class="button" id="updateButton" type="button" title="Check for Tada updates">Update</button>
+          <button class="icon-button" id="panelToggle" type="button" aria-label="Toggle side panel" title="Side panel">
+            <span aria-hidden="true">|||</span>
+          </button>
+          <button class="icon-button" id="fullscreenButton" type="button" aria-label="Toggle fullscreen" title="Fullscreen">
+            <span aria-hidden="true">[]</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace" id="workspace">
+        <aside class="side-panel" id="sidePanel" aria-label="Slide panel">
+          <div class="panel-tabs" role="tablist" aria-label="Panel mode">
+            <button class="tab-button is-active" data-panel-tab="thumbnails" id="thumbnailsTab" type="button" role="tab" aria-selected="true">
+              Slides
+            </button>
+            <button class="tab-button" data-panel-tab="presenter" id="presenterTab" type="button" role="tab" aria-selected="false">
+              Presenter
+            </button>
+          </div>
+
+          <section class="panel-section" id="thumbnailPanel" role="tabpanel" aria-labelledby="thumbnailsTab"></section>
+
+          <section class="panel-section presenter-panel" id="presenterPanel" role="tabpanel" aria-labelledby="presenterTab" hidden>
+            <div class="presenter-stat">
+              <span>Current</span>
+              <strong id="currentTitle">No deck loaded</strong>
+            </div>
+            <div class="presenter-stat">
+              <span>Next</span>
+              <strong id="nextTitle">None</strong>
+            </div>
+            <div class="presenter-stat">
+              <span>Elapsed</span>
+              <strong id="elapsedTime">00:00</strong>
+            </div>
+            <div class="presenter-stat update-stat">
+              <span>Updates</span>
+              <strong id="updateStatusText">Checking availability...</strong>
+            </div>
+            <div class="notes-block">
+              <span>Notes</span>
+              <p id="notesText"></p>
+            </div>
+          </section>
+        </aside>
+
+        <section class="presentation-area" id="presentationArea" tabindex="-1" aria-label="Presentation stage">
+          <div class="drop-layer" id="dropLayer" hidden>Drop HTML</div>
+          <button class="presentation-exit-button" id="exitPresentationButton" type="button" hidden>Exit</button>
+
+          <div class="stage fit-frame" id="stage">
+            <div class="empty-state" id="emptyState">
+              <strong>No deck loaded</strong>
+              <button class="button primary" id="emptyOpenButton" type="button">Open HTML</button>
+            </div>
+
+            <button class="stage-nav stage-nav-previous" id="prevStageButton" type="button" aria-label="Previous slide" title="Previous slide" hidden>
+              <span aria-hidden="true">&lt;</span>
+            </button>
+
+            <iframe
+              id="slideFrame"
+              title="Presented HTML slide"
+              sandbox="allow-scripts allow-forms allow-modals"
+              hidden
+            ></iframe>
+
+            <button class="stage-nav stage-nav-next" id="nextStageButton" type="button" aria-label="Next slide" title="Next slide" hidden>
+              <span aria-hidden="true">&gt;</span>
+            </button>
+          </div>
+
+          <footer class="control-bar" aria-label="Slide controls">
+            <button class="icon-button" id="prevButton" type="button" aria-label="Previous slide" title="Previous slide">
+              <span aria-hidden="true">&lt;</span>
+            </button>
+            <div class="slide-readout" aria-live="polite">
+              <strong id="slidePosition">0 / 0</strong>
+              <span id="modeLabel">section</span>
+            </div>
+            <button class="icon-button" id="nextButton" type="button" aria-label="Next slide" title="Next slide">
+              <span aria-hidden="true">&gt;</span>
+            </button>
+            <label class="selector-field">
+              <span>Slides</span>
+              <input id="selectorInput" type="text" value="section" spellcheck="false" aria-label="Slide selector">
+            </label>
+            <label class="fit-field">
+              <span>Fit</span>
+              <select id="fitMode">
+                <option value="fit">16:9</option>
+                <option value="fill">Fill</option>
+                <option value="scroll">Scroll</option>
+              </select>
+            </label>
+          </footer>
+        </section>
+      </main>
+
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+  </body>
+</html>

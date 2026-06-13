@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>tada upload</title>
+    <link rel="stylesheet" href="/cloud.css">
+    <script type="module" src="/upload.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/upload">
+        <span class="brand-mark" aria-hidden="true">✦</span>
+        <span>tada</span>
+      </a>
+      <nav aria-label="Product">
+        <a href="/docs/api">API/MCP docs</a>
+        <a href="/admin">Admin</a>
+        <a href="/presenter">Local presenter</a>
+      </nav>
+    </header>
+
+    <main class="upload-layout">
+      <section class="tool-surface" aria-labelledby="uploadTitle">
+        <p class="eyebrow">HTML deck pastebin</p>
+        <h1 id="uploadTitle">Upload a deck, get a URL.</h1>
+        <p class="lede">
+          Publish an HTML slide deck as an unlisted link. Anyone with the link can view it.
+        </p>
+
+        <div class="mode-tabs" role="tablist" aria-label="Upload source">
+          <button class="mode-tab" type="button" role="tab" aria-selected="true" data-mode="paste">Paste HTML</button>
+          <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="file">HTML file</button>
+          <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="url">Public URL</button>
+        </div>
+
+        <form class="input-stack" id="uploadForm">
+          <label class="field">
+            <span>Title</span>
+            <input id="titleInput" type="text" autocomplete="off" placeholder="Optional">
+          </label>
+
+          <div id="pastePanel">
+            <label class="field">
+              <span>HTML</span>
+              <textarea id="htmlInput" spellcheck="false" placeholder="<!doctype html>..."></textarea>
+            </label>
+          </div>
+
+          <div id="filePanel" hidden>
+            <label class="file-drop">
+              <input id="fileInput" type="file" accept=".html,.htm,text/html">
+              <span>
+                <strong>Choose one HTML file</strong>
+                Assets referenced beside the file are supported by the CLI; browser upload is for self-contained HTML in this prototype.
+              </span>
+            </label>
+          </div>
+
+          <div id="urlPanel" hidden>
+            <label class="field">
+              <span>Public URL</span>
+              <input id="urlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://example.com/deck.html">
+            </label>
+          </div>
+
+          <label class="certify-row">
+            <input id="certifyInput" type="checkbox">
+            <span>I certify that I have the rights to share this deck and its assets, and that anyone with the link may view it.</span>
+          </label>
+
+          <div class="actions">
+            <button class="button primary" type="submit" id="uploadButton">Upload</button>
+            <span class="lede" id="uploadStatus" aria-live="polite"></span>
+          </div>
+        </form>
+
+        <section class="result" id="result" aria-live="polite" hidden>
+          <h2>Share URL</h2>
+          <div class="url-output" id="shareUrl"></div>
+          <div class="result-actions">
+            <button class="button" type="button" id="copyButton">Copy</button>
+            <a class="button primary" id="openDeckLink" href="#">Open deck</a>
+          </div>
+          <ul class="notice-list" id="noticeList"></ul>
+        </section>
+      </section>
+
+      <aside class="side-panel" aria-labelledby="notesTitle">
+        <h2 id="notesTitle">Prototype rules</h2>
+        <ul class="notice-list">
+          <li>Uploads are public-unlisted and permanent for this local prototype.</li>
+          <li>No recipient download button, but HTML and assets are inspectable by link holders.</li>
+          <li>Warnings are shown only to uploaders and agents, never on the recipient viewer.</li>
+        </ul>
+      </aside>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
