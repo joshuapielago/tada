@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>tada admin</title>
+    <link rel="stylesheet" href="/cloud.css">
+    <script type="module" src="/admin.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/upload">
+        <span class="brand-mark" aria-hidden="true">✦</span>
+        <span>tada admin</span>
+      </a>
+      <nav aria-label="Admin">
+        <a href="/upload">Upload</a>
+      </nav>
+    </header>
+
+    <main class="admin-layout">
+      <section class="admin-panel">
+        <p class="eyebrow">Operational metrics</p>
+        <h1>Prototype stats</h1>
+        <div class="stats-grid" id="statsGrid"></div>
+      </section>
+
+      <section class="admin-panel">
+        <h2>Recent decks</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Deck</th>
+                <th>Surface</th>
+                <th>Warnings</th>
+                <th>Thumbnail</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="deckRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-panel">
+        <h2>Reports</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Deck</th>
+                <th>Reason</th>
+                <th>Email</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="reportRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

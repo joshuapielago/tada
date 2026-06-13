@@ -3,3 +3,5 @@ dist/
 release/
 *.log
 dev-app-update.yml
+.superpowers/
+.tada-cloud/

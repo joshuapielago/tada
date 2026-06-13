@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>tada deck</title>
+    <link rel="stylesheet" href="/cloud.css">
+    <script type="module" src="/cloud-viewer.js"></script>
+  </head>
+  <body>
+    <main class="viewer-shell">
+      <header class="topbar">
+        <a class="brand" href="/upload">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <span>tada</span>
+        </a>
+        <div class="viewer-title" id="deckTitle">Loading deck...</div>
+        <div class="viewer-actions">
+          <button class="button" type="button" id="originalButton" hidden>Original</button>
+          <button class="button" type="button" id="reportButton">Report</button>
+          <a class="button" href="/upload">Upload a deck</a>
+        </div>
+      </header>
+
+      <section class="viewer-stage" aria-label="Deck viewer">
+        <div class="slide-frame-wrap" id="frameWrap">
+          <iframe
+            id="slideFrame"
+            title="Published deck"
+            sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
+          ></iframe>
+        </div>
+      </section>
+
+      <section class="viewer-controls" aria-label="Deck controls">
+        <button class="icon-button" type="button" id="prevButton" aria-label="Previous slide">←</button>
+        <span id="slidePosition">0 / 0</span>
+        <button class="icon-button" type="button" id="nextButton" aria-label="Next slide">→</button>
+      </section>
+
+      <form class="report-form" id="reportForm" hidden>
+        <label class="field">
+          <span>Reason</span>
+          <textarea id="reportReason" required placeholder="Abuse, copyright concern, or other policy issue"></textarea>
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input id="reporterEmail" type="email" placeholder="Optional">
+        </label>
+        <div class="actions">
+          <button class="button primary" type="submit">Submit report</button>
+          <button class="button" type="button" id="cancelReportButton">Cancel</button>
+        </div>
+      </form>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

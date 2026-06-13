@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>tada API and MCP docs</title>
+    <link rel="stylesheet" href="/cloud.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/upload">
+        <span class="brand-mark" aria-hidden="true">✦</span>
+        <span>tada docs</span>
+      </a>
+      <nav aria-label="Docs">
+        <a href="/upload">Upload</a>
+        <a href="/admin">Admin</a>
+      </nav>
+    </header>
+
+    <main class="admin-layout">
+      <section class="admin-panel">
+        <p class="eyebrow">Private alpha</p>
+        <h1>API and MCP</h1>
+        <p class="lede">
+          Uploads are public-unlisted by default. Every upload must include Upload Certification.
+        </p>
+      </section>
+
+      <section class="admin-panel">
+        <h2>Raw HTML Upload</h2>
+        <pre><code>POST /api/decks
+Content-Type: application/json
+
+{
+  "html": "&lt;!doctype html&gt;...",
+  "title": "Optional",
+  "certifyRights": true
+}</code></pre>
+      </section>
+
+      <section class="admin-panel">
+        <h2>URL Upload</h2>
+        <pre><code>POST /api/decks
+Content-Type: application/json
+
+{
+  "sourceUrl": "https://example.com/deck.html",
+  "certifyRights": true
+}</code></pre>
+      </section>
+
+      <section class="admin-panel">
+        <h2>CLI</h2>
+        <pre><code>tada upload ./deck.html --api-url http://localhost:4180
+tada upload https://example.com/deck.html --api-url http://localhost:4180 --json</code></pre>
+      </section>
+
+      <section class="admin-panel">
+        <h2>MCP</h2>
+        <p class="lede">Hosted endpoint for this prototype:</p>
+        <pre><code>http://localhost:4180/mcp</code></pre>
+        <p class="lede">Tools:</p>
+        <ul class="notice-list">
+          <li><code>upload_html_deck</code>: raw HTML, optional title, <code>certifyRights: true</code></li>
+          <li><code>upload_html_file</code>: MCP-provided file content, filename, optional title, <code>certifyRights: true</code></li>
+          <li><code>upload_html_url</code>: public source URL, optional title, <code>certifyRights: true</code></li>
+        </ul>
+      </section>
+
+      <section class="admin-panel">
+        <h2>Response Shape</h2>
+        <pre><code>{
+  "id": "abc123",
+  "viewUrl": "http://localhost:4180/d/abc123",
+  "visibility": "unlisted",
+  "manageable": false,
+  "thumbnailStatus": "pending",
+  "warnings": [],
+  "notices": []
+}</code></pre>
+      </section>
+    </main>
+  </body>
+</html>
