@@ -6,8 +6,12 @@
   "description": "Present any HTML file or URL like a slide deck.",
   "type": "module",
   "main": "electron/main.cjs",
+  "bin": {
+    "tada": "bin/tada.js"
+  },
   "scripts": {
     "start": "node server.js",
+    "tada": "node bin/tada.js",
     "electron": "electron .",
     "electron:dev": "electron .",
     "pack": "electron-builder --dir --publish never -c.mac.identity=null",
@@ -24,7 +28,9 @@
     "electron-builder": "^26.8.1"
   },
   "dependencies": {
-    "electron-updater": "^6.8.3"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "electron-updater": "^6.8.3",
+    "zod": "^4.4.3"
   },
   "build": {
     "appId": "app.tada.presenter",
